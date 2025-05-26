@@ -3,8 +3,10 @@ package com.nof1.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.Project
 import com.nof1.data.model.ProjectWithHypotheses
+import com.nof1.data.repository.HypothesisGenerationRepository
 import com.nof1.data.repository.ProjectRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,10 +16,25 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel for managing Project data and UI state.
  */
-class ProjectViewModel(private val repository: ProjectRepository) : ViewModel() {
+class ProjectViewModel(
+    private val repository: ProjectRepository,
+    private val generationRepository: HypothesisGenerationRepository? = null
+) : ViewModel() {
     
     private val _showArchived = MutableStateFlow(false)
     val showArchived: StateFlow<Boolean> = _showArchived.asStateFlow()
+    
+    private val _isGeneratingHypotheses = MutableStateFlow(false)
+    val isGeneratingHypotheses: StateFlow<Boolean> = _isGeneratingHypotheses.asStateFlow()
+    
+    private val _generationError = MutableStateFlow<String?>(null)
+    val generationError: StateFlow<String?> = _generationError.asStateFlow()
+    
+    private val _generatedHypotheses = MutableStateFlow<List<Hypothesis>>(emptyList())
+    val generatedHypotheses: StateFlow<List<Hypothesis>> = _generatedHypotheses.asStateFlow()
+    
+    private val _apiCallDescription = MutableStateFlow<String?>(null)
+    val apiCallDescription: StateFlow<String?> = _apiCallDescription.asStateFlow()
     
     val projects = repository.getActiveProjects()
     val allProjects = repository.getAllProjects()
@@ -30,7 +47,26 @@ class ProjectViewModel(private val repository: ProjectRepository) : ViewModel() 
     
     fun insertProject(project: Project) {
         viewModelScope.launch {
-            repository.insertProject(project)
+            val projectId = repository.insertProject(project)
+            val savedProject = project.copy(id = projectId)
+            
+            // Automatically generate hypotheses if generation repository is available
+            generationRepository?.let { genRepo ->
+                _isGeneratingHypotheses.value = true
+                _generationError.value = null
+                _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}, described as ${savedProject.description}\""
+                
+                genRepo.generateAndSaveHypotheses(savedProject)
+                    .onSuccess { hypotheses ->
+                        // Hypotheses successfully generated and saved
+                        _generatedHypotheses.value = hypotheses
+                        _isGeneratingHypotheses.value = false
+                    }
+                    .onFailure { error ->
+                        _generationError.value = error.message ?: "Failed to generate hypotheses"
+                        _isGeneratingHypotheses.value = false
+                    }
+            }
         }
     }
     
@@ -53,11 +89,14 @@ class ProjectViewModel(private val repository: ProjectRepository) : ViewModel() 
     }
 }
 
-class ProjectViewModelFactory(private val repository: ProjectRepository) : ViewModelProvider.Factory {
+class ProjectViewModelFactory(
+    private val repository: ProjectRepository,
+    private val generationRepository: HypothesisGenerationRepository? = null
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProjectViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ProjectViewModel(repository) as T
+            return ProjectViewModel(repository, generationRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

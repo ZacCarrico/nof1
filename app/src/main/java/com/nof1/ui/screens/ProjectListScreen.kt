@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +28,8 @@ import com.nof1.viewmodel.SimpleProjectViewModel
 @Composable
 fun ProjectListScreen(
     onNavigateToProject: (Long) -> Unit,
-    onNavigateToAddProject: () -> Unit
+    onNavigateToAddProject: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
@@ -49,6 +51,12 @@ fun ProjectListScreen(
                         Icon(
                             Icons.Default.Archive,
                             contentDescription = stringResource(R.string.show_archived)
+                        )
+                    }
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings)
                         )
                     }
                 }
