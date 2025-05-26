@@ -30,8 +30,8 @@ fun LogEntryScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val logEntryRepository = LogEntryRepository(application.database.logEntryDao())
-    val experimentRepository = ExperimentRepository(application.database.experimentDao())
+    val logEntryRepository = application.logEntryRepository
+    val experimentRepository = application.experimentRepository
     
     val viewModel: LogEntryViewModel = viewModel(
         factory = LogEntryViewModelFactory(logEntryRepository, experimentRepository)

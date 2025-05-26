@@ -27,7 +27,7 @@ fun AddProjectScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val repository = ProjectRepository(application.database.projectDao())
+    val repository = application.projectRepository
     val viewModel: ProjectViewModel = viewModel(
         factory = ProjectViewModelFactory(repository)
     )

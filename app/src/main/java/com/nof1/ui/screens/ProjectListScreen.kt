@@ -17,10 +17,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Project
-import com.nof1.data.repository.ProjectRepository
 import com.nof1.ui.components.ProjectCard
-import com.nof1.viewmodel.ProjectViewModel
-import com.nof1.viewmodel.ProjectViewModelFactory
+import com.nof1.viewmodel.SimpleProjectViewModel
 
 /**
  * Screen displaying the list of projects.
@@ -33,10 +31,7 @@ fun ProjectListScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val repository = ProjectRepository(application.database.projectDao())
-    val viewModel: ProjectViewModel = viewModel(
-        factory = ProjectViewModelFactory(repository)
-    )
+    val viewModel = remember { SimpleProjectViewModel(application.projectRepository) }
     
     val showArchived by viewModel.showArchived.collectAsState()
     val projects by if (showArchived) {

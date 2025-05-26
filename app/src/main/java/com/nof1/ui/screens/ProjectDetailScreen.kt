@@ -35,8 +35,8 @@ fun ProjectDetailScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val projectRepository = ProjectRepository(application.database.projectDao())
-    val hypothesisRepository = HypothesisRepository(application.database.hypothesisDao())
+    val projectRepository = application.projectRepository
+    val hypothesisRepository = application.hypothesisRepository
     
     val hypothesisViewModel: HypothesisViewModel = viewModel(
         factory = HypothesisViewModelFactory(hypothesisRepository)

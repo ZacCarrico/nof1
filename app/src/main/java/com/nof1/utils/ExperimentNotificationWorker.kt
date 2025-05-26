@@ -25,9 +25,9 @@ class ExperimentNotificationWorker(
                 return@withContext Result.failure()
             }
 
-            val database = (applicationContext as Nof1Application).database
-            val experimentRepository = ExperimentRepository(database.experimentDao())
-            val logEntryRepository = LogEntryRepository(database.logEntryDao())
+            val application = applicationContext as Nof1Application
+            val experimentRepository = application.experimentRepository
+            val logEntryRepository = application.logEntryRepository
 
             val experiment = experimentRepository.getExperimentById(experimentId)
             if (experiment == null || experiment.isArchived || !experiment.notificationsEnabled) {
