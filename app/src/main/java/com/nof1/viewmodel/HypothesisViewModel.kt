@@ -60,18 +60,23 @@ class HypothesisViewModel(
         }
         
         viewModelScope.launch {
-            _isGenerating.value = true
-            _generationError.value = null
-            
-            generationRepository.generateHypotheses(project)
-                .onSuccess { hypotheses ->
-                    _generatedHypotheses.value = hypotheses
-                }
-                .onFailure { error ->
-                    _generationError.value = error.message ?: "Unknown error occurred"
-                }
-            
-            _isGenerating.value = false
+            try {
+                _isGenerating.value = true
+                _generationError.value = null
+                
+                generationRepository.generateHypotheses(project)
+                    .onSuccess { hypotheses ->
+                        _generatedHypotheses.value = hypotheses
+                        _isGenerating.value = false
+                    }
+                    .onFailure { error ->
+                        _generationError.value = error.message ?: "Unknown error occurred"
+                        _isGenerating.value = false
+                    }
+            } catch (e: Exception) {
+                _generationError.value = "Unexpected error: ${e.message}"
+                _isGenerating.value = false
+            }
         }
     }
     
