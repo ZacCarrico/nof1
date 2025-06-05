@@ -38,7 +38,7 @@ fun AddProjectScreen(
     
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
-        if (secureStorage.hasOpenAIApiKey()) {
+        if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
             HypothesisGenerationRepository(secureStorage, hypothesisRepository)
         } else null
     }

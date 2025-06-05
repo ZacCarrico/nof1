@@ -47,6 +47,14 @@ class HypothesisGenerationRepository(
     suspend fun generateHypotheses(project: Project, count: Int = 3): Result<List<String>> {
         return withContext(Dispatchers.IO) {
             try {
+                // Check for test mode
+                val baseUrl = secureStorage.getApiBaseUrl()
+                if (baseUrl.equals("test", ignoreCase = true)) {
+                    // Simulate a small delay for realistic test experience
+                    kotlinx.coroutines.delay(1000)
+                    return@withContext Result.success(listOf("hyp1", "hyp2"))
+                }
+                
                 // Check if API service was created successfully
                 val service = apiService
                 if (service == null) {
