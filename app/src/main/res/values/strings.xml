@@ -34,6 +34,9 @@
     <string name="edit_hypothesis">Edit Hypothesis</string>
     <string name="hypothesis_name">Hypothesis Name</string>
     <string name="hypothesis_description">Hypothesis Description</string>
+    <string name="hypothesis_notes">Notes</string>
+    <string name="notes_placeholder">Add your notes here...</string>
+    <string name="no_notes_added">No notes added yet</string>
     <string name="delete_hypothesis_confirmation">Are you sure you want to delete this hypothesis? This will also delete all related experiments.</string>
     <string name="no_hypotheses">No hypotheses found. Add a new hypothesis to get started.</string>
     

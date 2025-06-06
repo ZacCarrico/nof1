@@ -5,6 +5,7 @@ import com.nof1.data.local.Nof1Database
 import com.nof1.data.repository.ExperimentRepository
 import com.nof1.data.repository.HypothesisRepository
 import com.nof1.data.repository.LogEntryRepository
+import com.nof1.data.repository.NoteRepository
 import com.nof1.data.repository.ProjectRepository
 
 /**
@@ -18,4 +19,5 @@ class Nof1Application : Application() {
     val hypothesisRepository by lazy { HypothesisRepository(database.hypothesisDao()) }
     val experimentRepository by lazy { ExperimentRepository(database.experimentDao()) }
     val logEntryRepository by lazy { LogEntryRepository(database.logEntryDao()) }
+    val noteRepository by lazy { NoteRepository(database.noteDao()) }
 } 

@@ -8,6 +8,7 @@ import androidx.room.TypeConverters
 import com.nof1.data.model.Experiment
 import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.LogEntry
+import com.nof1.data.model.Note
 import com.nof1.data.model.Project
 
 /**
@@ -18,9 +19,10 @@ import com.nof1.data.model.Project
         Project::class,
         Hypothesis::class,
         Experiment::class,
-        LogEntry::class
+        LogEntry::class,
+        Note::class
     ],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -29,6 +31,7 @@ abstract class Nof1Database : RoomDatabase() {
     abstract fun hypothesisDao(): HypothesisDao
     abstract fun experimentDao(): ExperimentDao
     abstract fun logEntryDao(): LogEntryDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile

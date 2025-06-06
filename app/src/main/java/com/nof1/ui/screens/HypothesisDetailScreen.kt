@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,11 +28,13 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun HypothesisDetailScreen(
     hypothesisId: Long,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToNotes: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
     val repository = application.hypothesisRepository
+    val noteRepository = application.noteRepository
     
     val viewModel: HypothesisViewModel = viewModel(
         factory = HypothesisViewModelFactory(repository)
@@ -53,6 +56,9 @@ fun HypothesisDetailScreen(
             editedDescription = it.description
         }
     }
+    
+    // Load notes data
+    val notes by noteRepository.getNotesForHypothesis(hypothesisId).collectAsState(initial = emptyList())
     
     Scaffold(
         topBar = {
@@ -195,6 +201,59 @@ fun HypothesisDetailScreen(
                                 text = hypothesis!!.description,
                                 style = MaterialTheme.typography.bodyLarge
                             )
+                        }
+                    }
+                    
+                    Card(
+                        onClick = { onNavigateToNotes(hypothesisId) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.hypothesis_notes),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${notes.size} ${if (notes.size == 1) "note" else "notes"}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            if (notes.isNotEmpty()) {
+                                Text(
+                                    text = notes.first().content,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 2,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Latest: ${notes.first().createdAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.no_notes_added),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Tap to add your first note",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                     
