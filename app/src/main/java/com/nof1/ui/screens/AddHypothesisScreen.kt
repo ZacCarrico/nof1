@@ -60,6 +60,8 @@ fun AddHypothesisScreen(
     val isGenerating by viewModel.isGenerating.collectAsState()
     val generationError by viewModel.generationError.collectAsState()
     
+    var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
+    
     LaunchedEffect(projectId) {
         project = projectRepository.getProjectById(projectId)
     }
@@ -207,21 +209,89 @@ fun AddHypothesisScreen(
                     }
                 }
                 
-                if (generationRepository != null) {
-                    items(generatedHypotheses) { hypothesis ->
+                if (generationRepository != null && generatedHypotheses.isNotEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Click hypotheses to select those to keep",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val selectedList = selectedHypotheses.map { generatedHypotheses[it] }
+                                        selectedList.forEachIndexed { index, hypothesis ->
+                                            val hypothesisObj = Hypothesis(
+                                                projectId = projectId,
+                                                name = "Generated Hypothesis ${index + 1}",
+                                                description = hypothesis
+                                            )
+                                            viewModel.insertHypothesis(hypothesisObj)
+                                        }
+                                        onNavigateBack()
+                                    },
+                                    enabled = selectedHypotheses.isNotEmpty()
+                                ) {
+                                    Text("Save Selected")
+                                }
+                                
+                                OutlinedButton(
+                                    onClick = {
+                                        generatedHypotheses.forEachIndexed { index, hypothesis ->
+                                            val hypothesisObj = Hypothesis(
+                                                projectId = projectId,
+                                                name = "Generated Hypothesis ${index + 1}",
+                                                description = hypothesis
+                                            )
+                                            viewModel.insertHypothesis(hypothesisObj)
+                                        }
+                                        onNavigateBack()
+                                    }
+                                ) {
+                                    Text("Accept All")
+                                }
+                            }
+                        }
+                    }
+                    
+                    items(generatedHypotheses.size) { index ->
+                        val hypothesis = generatedHypotheses[index]
+                        val isSelected = selectedHypotheses.contains(index)
+                        
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = {
-                                if (name.isBlank()) {
-                                    name = hypothesis.take(50) + if (hypothesis.length > 50) "..." else ""
+                                selectedHypotheses = if (isSelected) {
+                                    selectedHypotheses - index
+                                } else {
+                                    selectedHypotheses + index
                                 }
-                                description = hypothesis
-                            }
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            )
                         ) {
                             Text(
                                 text = hypothesis,
                                 modifier = Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                             )
                         }
                     }

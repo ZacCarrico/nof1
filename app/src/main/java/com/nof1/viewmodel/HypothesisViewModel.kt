@@ -64,7 +64,7 @@ class HypothesisViewModel(
                 _isGenerating.value = true
                 _generationError.value = null
                 
-                generationRepository.generateHypotheses(project)
+                generationRepository.generateHypothesesStrings(project)
                     .onSuccess { hypotheses ->
                         _generatedHypotheses.value = hypotheses
                         _isGenerating.value = false

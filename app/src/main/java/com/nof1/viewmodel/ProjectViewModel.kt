@@ -45,20 +45,23 @@ class ProjectViewModel(
         _showArchived.value = !_showArchived.value
     }
     
+    private var _savedProject: Project? = null
+    
     fun insertProject(project: Project) {
         viewModelScope.launch {
             val projectId = repository.insertProject(project)
             val savedProject = project.copy(id = projectId)
+            _savedProject = savedProject
             
-            // Automatically generate hypotheses if generation repository is available
+            // Generate hypotheses but don't auto-save them
             generationRepository?.let { genRepo ->
                 _isGeneratingHypotheses.value = true
                 _generationError.value = null
                 _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}, described as ${savedProject.description}\""
                 
-                genRepo.generateAndSaveHypotheses(savedProject)
+                genRepo.generateHypotheses(savedProject)
                     .onSuccess { hypotheses ->
-                        // Hypotheses successfully generated and saved
+                        // Hypotheses generated but not saved yet
                         _generatedHypotheses.value = hypotheses
                         _isGeneratingHypotheses.value = false
                     }
@@ -66,6 +69,28 @@ class ProjectViewModel(
                         _generationError.value = error.message ?: "Failed to generate hypotheses"
                         _isGeneratingHypotheses.value = false
                     }
+            }
+        }
+    }
+    
+    fun saveSelectedHypotheses(selectedIndices: Set<Int>) {
+        viewModelScope.launch {
+            _savedProject?.let { project ->
+                val selectedHypotheses = selectedIndices.map { index ->
+                    _generatedHypotheses.value[index].copy(projectId = project.id)
+                }
+                generationRepository?.saveHypotheses(selectedHypotheses)
+            }
+        }
+    }
+    
+    fun saveAllHypotheses() {
+        viewModelScope.launch {
+            _savedProject?.let { project ->
+                val allHypotheses = _generatedHypotheses.value.map { hypothesis ->
+                    hypothesis.copy(projectId = project.id)
+                }
+                generationRepository?.saveHypotheses(allHypotheses)
             }
         }
     }

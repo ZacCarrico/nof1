@@ -44,7 +44,7 @@ class HypothesisGenerationRepository(
         }
     }
     
-    suspend fun generateHypotheses(project: Project, count: Int = 3): Result<List<String>> {
+    suspend fun generateHypothesesStrings(project: Project, count: Int = 3): Result<List<String>> {
         return withContext(Dispatchers.IO) {
             try {
                 // Check for test mode
@@ -104,7 +104,7 @@ class HypothesisGenerationRepository(
     suspend fun generateAndSaveHypotheses(project: Project, count: Int = 3): Result<List<Hypothesis>> {
         return withContext(Dispatchers.IO) {
             try {
-                val hypothesesResult = generateHypotheses(project, count)
+                val hypothesesResult = generateHypothesesStrings(project, count)
                 if (hypothesesResult.isSuccess) {
                     val hypothesesStrings = hypothesesResult.getOrNull() ?: emptyList()
                     val savedHypotheses = mutableListOf<Hypothesis>()
@@ -138,6 +138,56 @@ class HypothesisGenerationRepository(
                 } else {
                     Result.failure(hypothesesResult.exceptionOrNull() ?: Exception("Failed to generate hypotheses"))
                 }
+            } catch (e: Exception) {
+                Result.failure(Exception("Error saving hypotheses: ${e.message}", e))
+            }
+        }
+    }
+    
+    suspend fun generateHypotheses(project: Project, count: Int = 3): Result<List<Hypothesis>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val hypothesesResult = generateHypothesesStrings(project, count)
+                if (hypothesesResult.isSuccess) {
+                    val hypothesesStrings = hypothesesResult.getOrNull() ?: emptyList()
+                    val hypotheses = hypothesesStrings.map { hypothesisText ->
+                        Hypothesis(
+                            projectId = project.id,
+                            name = if (hypothesisText.length > 50) {
+                                hypothesisText.take(47) + "..."
+                            } else {
+                                hypothesisText
+                            },
+                            description = hypothesisText
+                        )
+                    }
+                    Result.success(hypotheses)
+                } else {
+                    Result.failure(hypothesesResult.exceptionOrNull() ?: Exception("Failed to generate hypotheses"))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("Error generating hypotheses: ${e.message}", e))
+            }
+        }
+    }
+    
+    suspend fun saveHypotheses(hypotheses: List<Hypothesis>): Result<List<Hypothesis>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val savedHypotheses = mutableListOf<Hypothesis>()
+                for (hypothesis in hypotheses) {
+                    try {
+                        hypothesisRepository?.let { repo ->
+                            repo.insertHypothesis(hypothesis)
+                            savedHypotheses.add(hypothesis)
+                        } ?: run {
+                            savedHypotheses.add(hypothesis)
+                        }
+                    } catch (e: Exception) {
+                        continue
+                    }
+                }
+                Result.success(savedHypotheses)
             } catch (e: Exception) {
                 Result.failure(Exception("Error saving hypotheses: ${e.message}", e))
             }

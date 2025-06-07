@@ -61,6 +61,7 @@ fun AddProjectScreen(
     val apiCallDescription by viewModel.apiCallDescription.collectAsState()
     
     var projectSaved by remember { mutableStateOf(false) }
+    var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
 
     Scaffold(
         topBar = {
@@ -293,17 +294,69 @@ fun AddProjectScreen(
                     
                     if (generatedHypotheses.isNotEmpty()) {
                         item {
-                            Text(
-                                text = "Generated Hypotheses",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "Generated Hypotheses",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                                
+                                Text(
+                                    text = "Click hypotheses to select those to keep",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            viewModel.saveSelectedHypotheses(selectedHypotheses)
+                                            onNavigateBack()
+                                        },
+                                        enabled = selectedHypotheses.isNotEmpty()
+                                    ) {
+                                        Text("Save Selected")
+                                    }
+                                    
+                                    OutlinedButton(
+                                        onClick = {
+                                            viewModel.saveAllHypotheses()
+                                            onNavigateBack()
+                                        }
+                                    ) {
+                                        Text("Accept All")
+                                    }
+                                }
+                            }
                         }
                         
-                        items(generatedHypotheses) { hypothesis ->
+                        items(generatedHypotheses.size) { index ->
+                            val hypothesis = generatedHypotheses[index]
+                            val isSelected = selectedHypotheses.contains(index)
+                            
                             Card(
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    selectedHypotheses = if (isSelected) {
+                                        selectedHypotheses - index
+                                    } else {
+                                        selectedHypotheses + index
+                                    }
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                )
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),
@@ -312,12 +365,22 @@ fun AddProjectScreen(
                                     Text(
                                         text = hypothesis.name,
                                         style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
                                     )
                                     
                                     Text(
                                         text = hypothesis.description,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
                                     )
                                 }
                             }
