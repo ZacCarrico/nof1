@@ -1,6 +1,8 @@
 package com.nof1
 
 import android.app.Application
+import androidx.work.Configuration
+import androidx.work.WorkManager
 import com.nof1.data.local.Nof1Database
 import com.nof1.utils.NotificationHelper
 import com.nof1.data.repository.ExperimentRepository
@@ -18,6 +20,13 @@ class Nof1Application : Application() {
     
     override fun onCreate() {
         super.onCreate()
+        
+        // Initialize WorkManager
+        val configuration = Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.INFO)
+            .build()
+        WorkManager.initialize(this, configuration)
+        
         NotificationHelper.createNotificationChannel(this)
     }
     
