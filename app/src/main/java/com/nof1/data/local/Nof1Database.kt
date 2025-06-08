@@ -10,6 +10,7 @@ import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.LogEntry
 import com.nof1.data.model.Note
 import com.nof1.data.model.Project
+import com.nof1.data.model.ReminderSettings
 
 /**
  * Main Room database for the application.
@@ -20,9 +21,10 @@ import com.nof1.data.model.Project
         Hypothesis::class,
         Experiment::class,
         LogEntry::class,
-        Note::class
+        Note::class,
+        ReminderSettings::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -32,6 +34,7 @@ abstract class Nof1Database : RoomDatabase() {
     abstract fun experimentDao(): ExperimentDao
     abstract fun logEntryDao(): LogEntryDao
     abstract fun noteDao(): NoteDao
+    abstract fun reminderSettingsDao(): ReminderSettingsDao
 
     companion object {
         @Volatile

@@ -16,6 +16,18 @@ data class ProjectWithHypotheses(
 )
 
 /**
+ * Represents a project with its reminder settings.
+ */
+data class ProjectWithReminders(
+    @Embedded val project: Project,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "entityId"
+    )
+    val reminderSettings: List<ReminderSettings>
+)
+
+/**
  * Represents a hypothesis with its associated experiments.
  */
 data class HypothesisWithExperiments(
@@ -25,6 +37,18 @@ data class HypothesisWithExperiments(
         entityColumn = "hypothesisId"
     )
     val experiments: List<Experiment>
+)
+
+/**
+ * Represents a hypothesis with its reminder settings.
+ */
+data class HypothesisWithReminders(
+    @Embedded val hypothesis: Hypothesis,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "entityId"
+    )
+    val reminderSettings: List<ReminderSettings>
 )
 
 /**

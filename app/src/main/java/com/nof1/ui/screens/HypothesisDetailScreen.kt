@@ -17,8 +17,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Hypothesis
+import com.nof1.data.model.ReminderEntityType
+import com.nof1.data.model.ReminderSettings
+import com.nof1.ui.components.ReminderSettingsCard
+import com.nof1.ui.components.ReminderDialog
 import com.nof1.viewmodel.HypothesisViewModel
 import com.nof1.viewmodel.HypothesisViewModelFactory
+import com.nof1.viewmodel.ReminderViewModel
+import com.nof1.viewmodel.ReminderViewModelFactory
 import java.time.format.DateTimeFormatter
 
 /**
@@ -35,9 +41,14 @@ fun HypothesisDetailScreen(
     val application = context.applicationContext as Nof1Application
     val repository = application.hypothesisRepository
     val noteRepository = application.noteRepository
+    val reminderRepository = application.reminderRepository
     
     val viewModel: HypothesisViewModel = viewModel(
         factory = HypothesisViewModelFactory(repository)
+    )
+    
+    val reminderViewModel: ReminderViewModel = viewModel(
+        factory = ReminderViewModelFactory(reminderRepository, context)
     )
     
     var hypothesis by remember { mutableStateOf<Hypothesis?>(null) }
@@ -59,6 +70,14 @@ fun HypothesisDetailScreen(
     
     // Load notes data
     val notes by noteRepository.getNotesForHypothesis(hypothesisId).collectAsState(initial = emptyList())
+    
+    // Load reminder data
+    val hypothesisReminders by reminderViewModel.getReminderSettingsForEntity(
+        ReminderEntityType.HYPOTHESIS, hypothesisId
+    ).collectAsState(initial = emptyList())
+    
+    var showReminderDialog by remember { mutableStateOf(false) }
+    var editingReminder by remember { mutableStateOf<ReminderSettings?>(null) }
     
     Scaffold(
         topBar = {
@@ -257,6 +276,25 @@ fun HypothesisDetailScreen(
                         }
                     }
                     
+                    // Reminder settings card
+                    ReminderSettingsCard(
+                        reminders = hypothesisReminders,
+                        onAddReminder = {
+                            editingReminder = null
+                            showReminderDialog = true
+                        },
+                        onEditReminder = { reminder ->
+                            editingReminder = reminder
+                            showReminderDialog = true
+                        },
+                        onDeleteReminder = { reminder ->
+                            reminderViewModel.deleteReminder(reminder)
+                        },
+                        onToggleReminder = { reminder, isEnabled ->
+                            reminderViewModel.toggleReminderEnabled(reminder.id, isEnabled)
+                        }
+                    )
+                    
                     // Metadata card
                     Card(
                         modifier = Modifier.fillMaxWidth()
@@ -324,5 +362,28 @@ fun HypothesisDetailScreen(
                 }
             }
         }
+    }
+    
+    // Reminder dialog
+    if (showReminderDialog) {
+        ReminderDialog(
+            isEdit = editingReminder != null,
+            initialReminder = editingReminder,
+            entityType = ReminderEntityType.HYPOTHESIS,
+            entityId = hypothesisId,
+            onDismiss = {
+                showReminderDialog = false
+                editingReminder = null
+            },
+            onSave = { reminder ->
+                if (editingReminder != null) {
+                    reminderViewModel.updateReminder(reminder)
+                } else {
+                    reminderViewModel.createReminder(reminder)
+                }
+                showReminderDialog = false
+                editingReminder = null
+            }
+        )
     }
 } 
