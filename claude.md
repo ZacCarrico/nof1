@@ -1,5 +1,8 @@
-After making changes:
-1. git add the changes and any new files
-1. create a useful commit message that doesn't reference Claude
-1. git commit
-1. git push to origin
+## Rules to Follow
+
+1. Write secure code using best practices.
+1. Write a list of to-dos before making code changes.
+1. Add imports to the top of files.
+1. Write or update tests for code changes. Execute the tests using pytest. Fix the code to get the test to pass. If this is unreasonable, change the test.
+1. Run `make format; make lint` once you're finished making code changes, and then fix any errors seen in stdout.
+1. Git add and commit after a code change with a short and sweet commit message that doesn't include references to Claude.
