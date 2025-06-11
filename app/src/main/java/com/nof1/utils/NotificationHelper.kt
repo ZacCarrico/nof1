@@ -1,12 +1,15 @@
 package com.nof1.utils
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.nof1.MainActivity
 import com.nof1.R
 import com.nof1.data.model.ReminderEntityType
@@ -106,5 +109,28 @@ object NotificationHelper {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify("${entityType.name}_${entityId}".hashCode(), builder.build())
+    }
+    
+    /**
+     * Checks if notification permission is granted (for Android 13+).
+     */
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // For Android 12 and below, notifications are enabled by default
+            true
+        }
+    }
+    
+    /**
+     * Checks if notifications are enabled for the app.
+     */
+    fun areNotificationsEnabled(context: Context): Boolean {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        return notificationManager.areNotificationsEnabled()
     }
 } 
