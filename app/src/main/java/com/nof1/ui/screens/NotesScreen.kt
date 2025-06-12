@@ -1,5 +1,6 @@
 package com.nof1.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
@@ -226,46 +227,110 @@ private fun NoteDialog(
 ) {
     var content by remember { mutableStateOf(note?.content ?: "") }
     
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
+    // Full-screen overlay that takes up the entire screen
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            text = if (note != null) "Edit Note" else "Add Note",
+                            maxLines = 1
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Cancel")
+                        }
+                    },
+                    actions = {
+                        TextButton(
+                            onClick = { onSave(content.trim()) },
+                            enabled = content.trim().isNotBlank()
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = if (note != null) "Edit Note" else "Add Note",
-                    style = MaterialTheme.typography.headlineSmall
-                )
+                // Instructions for the user
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "💡 Hypothesis Notes",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Use this space to capture your thoughts, observations, questions, and insights about your hypothesis. Consider noting:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "• Key observations and patterns\n• Questions that arise\n• Potential variables to consider\n• Insights from your experiments\n• Next steps and ideas",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 
+                // Large text area for extensive note-taking
                 OutlinedTextField(
                     value = content,
                     onValueChange = { newValue -> content = newValue },
-                    label = { Text("Note content") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 5
+                    label = { Text("Your notes and thoughts") },
+                    placeholder = { 
+                        Text(
+                            "Start writing your thoughts, observations, questions, and insights here...\n\nYou have plenty of space to capture detailed notes about your hypothesis and related experiments."
+                        ) 
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f), // Takes up all remaining space
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.4
+                    ),
+                    maxLines = Int.MAX_VALUE, // Allow unlimited lines for extensive note-taking
+                    supportingText = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${content.length} characters",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (note != null) {
+                                Text(
+                                    text = "Last updated: ${note.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    TextButton(
-                        onClick = { onSave(content.trim()) },
-                        enabled = content.trim().isNotBlank()
-                    ) {
-                        Text(stringResource(R.string.save))
-                    }
-                }
             }
         }
     }
