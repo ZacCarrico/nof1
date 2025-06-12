@@ -1,6 +1,7 @@
 package com.nof1
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +14,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.nof1.ui.components.NotificationPermissionDialog
 import com.nof1.ui.navigation.Nof1Navigation
 import com.nof1.ui.theme.Nof1Theme
@@ -45,6 +48,14 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             var showNotificationDialog by remember { mutableStateOf(false) }
+            val navController = rememberNavController()
+            
+            // Handle notification navigation
+            LaunchedEffect(intent) {
+                // Small delay to ensure NavController is initialized
+                kotlinx.coroutines.delay(100)
+                handleNotificationIntent(navController)
+            }
             
             // Check if we should show notification permission dialog
             LaunchedEffect(Unit) {
@@ -67,7 +78,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Nof1Navigation()
+                    Nof1Navigation(navController = navController)
                 }
                 
                 // Show notification permission dialog if needed
@@ -110,5 +121,65 @@ class MainActivity : ComponentActivity() {
             // For Android 12 and below, notifications are enabled by default
             preferencesHelper.setNotificationPermissionRequested()
         }
+    }
+    
+    private fun handleNotificationIntent(navController: NavHostController) {
+        // Handle navigation from notification clicks
+        intent?.let { notificationIntent ->
+            val hypothesisId = notificationIntent.getLongExtra("hypothesis_id", -1L)
+            val projectId = notificationIntent.getLongExtra("project_id", -1L)
+            val experimentId = notificationIntent.getLongExtra("experiment_id", -1L)
+            val fromReminder = notificationIntent.getBooleanExtra("from_reminder", false)
+            val fromNotification = notificationIntent.getBooleanExtra("from_notification", false)
+            
+            // Debug logging to understand what's in the intent
+            android.util.Log.d("MainActivity", "Processing notification intent:")
+            android.util.Log.d("MainActivity", "  hypothesis_id: $hypothesisId")
+            android.util.Log.d("MainActivity", "  project_id: $projectId")
+            android.util.Log.d("MainActivity", "  experiment_id: $experimentId")
+            android.util.Log.d("MainActivity", "  from_reminder: $fromReminder")
+            android.util.Log.d("MainActivity", "  from_notification: $fromNotification")
+            
+            when {
+                hypothesisId > 0 && fromReminder -> {
+                    // Navigate directly to hypothesis from hypothesis reminder notification
+                    android.util.Log.d("MainActivity", "Navigating to hypothesis $hypothesisId")
+                    navController.navigate("hypothesis/$hypothesisId") {
+                        // Clear back stack to prevent going back to projects
+                        popUpTo("projects") { inclusive = false }
+                    }
+                }
+                projectId > 0 && fromReminder -> {
+                    // Navigate to project from project reminder notification
+                    android.util.Log.d("MainActivity", "Navigating to project $projectId")
+                    navController.navigate("project/$projectId") {
+                        popUpTo("projects") { inclusive = false }
+                    }
+                }
+                experimentId > 0 && fromNotification -> {
+                    // Navigate to experiment log entry from experiment notification
+                    android.util.Log.d("MainActivity", "Navigating to experiment log $experimentId")
+                    navController.navigate("log/$experimentId/true") {
+                        popUpTo("projects") { inclusive = false }
+                    }
+                }
+                else -> {
+                    android.util.Log.d("MainActivity", "No valid navigation target found in intent")
+                }
+            }
+            
+            // Clear the intent extras to prevent re-navigation on configuration changes
+            intent.removeExtra("hypothesis_id")
+            intent.removeExtra("project_id")
+            intent.removeExtra("experiment_id")
+            intent.removeExtra("from_reminder")
+            intent.removeExtra("from_notification")
+        }
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        // Handle new intents when app is already running
+        setIntent(intent)
     }
 } 
