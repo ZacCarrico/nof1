@@ -91,14 +91,14 @@ class ReminderSchedulerTest {
         println("Current time: $currentTime")
         println("Calculated delay: ${delay}ms")
         
-        // With the fix, delay should always be at least 30 seconds (MIN_DELAY_SECONDS)
+        // With the fix, delay should always be at least 5 seconds (MIN_DELAY_SECONDS)
         // or schedule for tomorrow if too close to current time
-        assertTrue("Delay should be at least 30 seconds to prevent immediate execution", 
-            delay >= 30 * 1000)
+        assertTrue("Delay should be at least 5 seconds to prevent immediate execution", 
+            delay >= 5 * 1000)
         
         // Should be either next day (if scheduled for tomorrow) or reasonable future time
         val isNextDayDelay = delay > Duration.ofHours(20).toMillis()
-        val isReasonableFutureDelay = delay >= 30 * 1000 && delay < Duration.ofHours(12).toMillis()
+        val isReasonableFutureDelay = delay >= 5 * 1000 && delay < Duration.ofHours(12).toMillis()
         
         assertTrue("Delay should be either next day or reasonable future time", 
             isNextDayDelay || isReasonableFutureDelay)
@@ -111,9 +111,8 @@ class ReminderSchedulerTest {
         // Test times that are just a few seconds in the future
         val testTimes = listOf(
             now.plusSeconds(1).toLocalTime(),    // 1 second from now
-            now.plusSeconds(5).toLocalTime(),    // 5 seconds from now  
-            now.plusSeconds(15).toLocalTime(),   // 15 seconds from now
-            now.plusSeconds(29).toLocalTime()    // 29 seconds from now (just under 30)
+            now.plusSeconds(3).toLocalTime(),    // 3 seconds from now  
+            now.plusSeconds(4).toLocalTime()     // 4 seconds from now (just under 5)
         )
         
         testTimes.forEach { time ->
@@ -122,6 +121,23 @@ class ReminderSchedulerTest {
             // All should be scheduled for tomorrow due to minimum delay requirement
             assertTrue("Time $time should be scheduled for tomorrow (delay >= 20 hours)", 
                 delay >= Duration.ofHours(20).toMillis())
+        }
+        
+        // Test times that should work normally (more than 5 seconds)
+        val normalTimes = listOf(
+            now.plusSeconds(10).toLocalTime(),   // 10 seconds from now
+            now.plusMinutes(1).toLocalTime(),    // 1 minute from now
+            now.plusMinutes(5).toLocalTime()     // 5 minutes from now
+        )
+        
+        normalTimes.forEach { time ->
+            val delay = calculateInitialDelayForTest(time)
+            
+            // These should be scheduled normally (not pushed to tomorrow)
+            assertTrue("Time $time should be scheduled normally (delay < 20 hours)", 
+                delay < Duration.ofHours(20).toMillis())
+            assertTrue("Time $time should still have minimum 5 second delay", 
+                delay >= 5 * 1000)
         }
     }
     
@@ -143,7 +159,7 @@ class ReminderSchedulerTest {
         val delay = Duration.between(now, targetTime).toMillis()
         
         // Replicate the minimum delay logic from ReminderScheduler
-        val MIN_DELAY_SECONDS = 30
+        val MIN_DELAY_SECONDS = 5
         return if (delay < MIN_DELAY_SECONDS * 1000) {
             // Schedule for tomorrow at the same time to prevent immediate execution
             val tomorrowAtNotificationTime = todayAtNotificationTime.plusDays(1)

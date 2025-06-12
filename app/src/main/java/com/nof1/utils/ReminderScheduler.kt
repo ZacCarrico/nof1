@@ -18,7 +18,8 @@ object ReminderScheduler {
     
     // Minimum delay in seconds to prevent immediate notification execution
     // This prevents race conditions where very small delays cause immediate triggers
-    private const val MIN_DELAY_SECONDS = 30
+    // Set to 5 seconds to allow normal scheduling while preventing race conditions
+    private const val MIN_DELAY_SECONDS = 5
     
     fun scheduleReminder(context: Context, reminderSettings: ReminderSettings) {
         if (!reminderSettings.isEnabled) {
