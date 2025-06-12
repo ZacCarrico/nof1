@@ -16,6 +16,10 @@ import java.util.concurrent.TimeUnit
  */
 object ReminderScheduler {
     
+    // Minimum delay in seconds to prevent immediate notification execution
+    // This prevents race conditions where very small delays cause immediate triggers
+    private const val MIN_DELAY_SECONDS = 30
+    
     fun scheduleReminder(context: Context, reminderSettings: ReminderSettings) {
         if (!reminderSettings.isEnabled) {
             cancelReminder(context, reminderSettings.id)
@@ -158,7 +162,17 @@ object ReminderScheduler {
             todayAtNotificationTime.plusDays(1)
         }
         
-        return Duration.between(now, targetTime).toMillis()
+        val delay = Duration.between(now, targetTime).toMillis()
+        
+        // Prevent immediate notifications by enforcing minimum delay
+        // If delay is less than MIN_DELAY_SECONDS, schedule for next occurrence
+        return if (delay < MIN_DELAY_SECONDS * 1000) {
+            // Schedule for tomorrow at the same time to prevent immediate execution
+            val tomorrowAtNotificationTime = todayAtNotificationTime.plusDays(1)
+            Duration.between(now, tomorrowAtNotificationTime).toMillis()
+        } else {
+            delay
+        }
     }
     
     private fun calculateWeeklyInitialDelay(notificationTime: LocalTime, daysOfWeek: Set<DayOfWeek>): Long {
@@ -182,7 +196,16 @@ object ReminderScheduler {
         }
         
         val targetTime = now.toLocalDate().plusDays(daysUntilNext.toLong()).atTime(notificationTime)
-        return Duration.between(now, targetTime).toMillis()
+        val delay = Duration.between(now, targetTime).toMillis()
+        
+        // Prevent immediate notifications for weekly reminders too
+        return if (delay < MIN_DELAY_SECONDS * 1000) {
+            // If delay is too small, add a week to schedule for next occurrence
+            val nextWeekTargetTime = targetTime.plusWeeks(1)
+            Duration.between(now, nextWeekTargetTime).toMillis()
+        } else {
+            delay
+        }
     }
     
     private fun calculateMonthlyInitialDelay(notificationTime: LocalTime): Long {
@@ -197,6 +220,15 @@ object ReminderScheduler {
             today.plusMonths(1).withDayOfMonth(currentDay).atTime(notificationTime)
         }
         
-        return Duration.between(now, targetTime).toMillis()
+        val delay = Duration.between(now, targetTime).toMillis()
+        
+        // Prevent immediate notifications for monthly reminders too
+        return if (delay < MIN_DELAY_SECONDS * 1000) {
+            // If delay is too small, add a month to schedule for next occurrence
+            val nextMonthTargetTime = targetTime.plusMonths(1)
+            Duration.between(now, nextMonthTargetTime).toMillis()
+        } else {
+            delay
+        }
     }
 }
