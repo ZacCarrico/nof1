@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
+import com.nof1.data.model.Hypothesis
+import com.nof1.data.repository.HypothesisGenerationRepository
 import com.nof1.data.repository.HypothesisRepository
 import com.nof1.data.repository.ProjectRepository
 import com.nof1.data.model.ReminderEntityType
@@ -24,6 +27,7 @@ import com.nof1.data.model.ReminderSettings
 import com.nof1.ui.components.HypothesisCard
 import com.nof1.ui.components.ReminderSettingsCard
 import com.nof1.ui.components.ReminderDialog
+import com.nof1.utils.SecureStorage
 import com.nof1.viewmodel.HypothesisViewModel
 import com.nof1.viewmodel.HypothesisViewModelFactory
 import com.nof1.viewmodel.ReminderViewModel
@@ -46,8 +50,15 @@ fun ProjectDetailScreen(
     val hypothesisRepository = application.hypothesisRepository
     val reminderRepository = application.reminderRepository
     
+    val secureStorage = remember { SecureStorage(context) }
+    val generationRepository = remember { 
+        if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
+            HypothesisGenerationRepository(secureStorage, hypothesisRepository)
+        } else null
+    }
+    
     val hypothesisViewModel: HypothesisViewModel = viewModel(
-        factory = HypothesisViewModelFactory(hypothesisRepository)
+        factory = HypothesisViewModelFactory(hypothesisRepository, generationRepository)
     )
     
     val reminderViewModel: ReminderViewModel = viewModel(
@@ -64,8 +75,14 @@ fun ProjectDetailScreen(
         ReminderEntityType.PROJECT, projectId
     ).collectAsState(initial = emptyList())
     
+    // Hypothesis generation state
+    val generatedHypotheses by hypothesisViewModel.generatedHypotheses.collectAsState()
+    val isGenerating by hypothesisViewModel.isGenerating.collectAsState()
+    val generationError by hypothesisViewModel.generationError.collectAsState()
+    
     var showReminderDialog by remember { mutableStateOf(false) }
     var editingReminder by remember { mutableStateOf<ReminderSettings?>(null) }
+    var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
 
     Scaffold(
         topBar = {
@@ -112,11 +129,6 @@ fun ProjectDetailScreen(
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                Text(
-                                    text = proj.description,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                
                                 if (proj.goal.isNotBlank()) {
                                     Text(
                                         text = "Goal: ${proj.goal}",
@@ -152,15 +164,205 @@ fun ProjectDetailScreen(
                 
                 // Hypotheses section header
                 item {
-                    Text(
-                        text = "Hypotheses",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Hypotheses",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                        
+                        if (generationRepository != null && project?.project != null) {
+                            Button(
+                                onClick = { 
+                                    hypothesisViewModel.generateHypotheses(project!!.project)
+                                    selectedHypotheses = setOf() // Reset selection
+                                },
+                                enabled = !isGenerating,
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                if (isGenerating) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (isGenerating) "Generating..." else "Generate",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
                 }
                 
-                // Hypotheses content
-                if (hypotheses.isEmpty()) {
+                // Generation error display
+                generationError?.let { error ->
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = error,
+                                modifier = Modifier.padding(12.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+                
+                // Generated hypotheses selection UI
+                if (generationRepository != null && generatedHypotheses.isNotEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Generated Hypotheses",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            
+                            Text(
+                                text = "Click hypotheses to select those to save",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        val selectedList = selectedHypotheses.map { generatedHypotheses[it] }
+                                        selectedList.forEachIndexed { index, hypothesis ->
+                                            val hypothesisObj = Hypothesis(
+                                                projectId = projectId,
+                                                name = if (hypothesis.length > 50) {
+                                                    hypothesis.take(47) + "..."
+                                                } else {
+                                                    hypothesis
+                                                },
+                                                description = hypothesis
+                                            )
+                                            hypothesisViewModel.insertHypothesis(hypothesisObj)
+                                        }
+                                        hypothesisViewModel.clearGeneratedHypotheses()
+                                    },
+                                    enabled = selectedHypotheses.isNotEmpty()
+                                ) {
+                                    Text("Save Selected")
+                                }
+                                
+                                OutlinedButton(
+                                    onClick = {
+                                        generatedHypotheses.forEachIndexed { index, hypothesis ->
+                                            val hypothesisObj = Hypothesis(
+                                                projectId = projectId,
+                                                name = if (hypothesis.length > 50) {
+                                                    hypothesis.take(47) + "..."
+                                                } else {
+                                                    hypothesis
+                                                },
+                                                description = hypothesis
+                                            )
+                                            hypothesisViewModel.insertHypothesis(hypothesisObj)
+                                        }
+                                        hypothesisViewModel.clearGeneratedHypotheses()
+                                    }
+                                ) {
+                                    Text("Accept All")
+                                }
+                                
+                                TextButton(
+                                    onClick = {
+                                        hypothesisViewModel.clearGeneratedHypotheses()
+                                    }
+                                ) {
+                                    Text("Dismiss")
+                                }
+                            }
+                        }
+                    }
+                    
+                    items(generatedHypotheses.size) { index ->
+                        val hypothesis = generatedHypotheses[index]
+                        val isSelected = selectedHypotheses.contains(index)
+                        
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                selectedHypotheses = if (isSelected) {
+                                    selectedHypotheses - index
+                                } else {
+                                    selectedHypotheses + index
+                                }
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            )
+                        ) {
+                            Text(
+                                text = hypothesis,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                // API key configuration info for generation
+                if (generationRepository == null && hypotheses.isEmpty()) {
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "💡 Auto-Generate Hypotheses",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "To enable AI-powered hypothesis generation for this project, please configure your OpenAI API key in Settings.",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Existing hypotheses content
+                if (hypotheses.isEmpty() && generatedHypotheses.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier

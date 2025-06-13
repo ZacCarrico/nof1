@@ -195,7 +195,7 @@ class HypothesisGenerationRepository(
     }
     
     private fun buildPrompt(project: Project, count: Int): String {
-        return "Generate hypotheses for achieving ${project.goal}, described as ${project.description}"
+        return "Generate hypotheses for achieving ${project.goal}"
     }
     
     private fun parseHypotheses(content: String): List<String> {

@@ -57,7 +57,7 @@ class ProjectViewModel(
             generationRepository?.let { genRepo ->
                 _isGeneratingHypotheses.value = true
                 _generationError.value = null
-                _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}, described as ${savedProject.description}\""
+                _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}\""
                 
                 genRepo.generateHypotheses(savedProject)
                     .onSuccess { hypotheses ->

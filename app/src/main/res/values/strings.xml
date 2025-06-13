@@ -23,7 +23,6 @@
     <string name="add_project">Add Project</string>
     <string name="edit_project">Edit Project</string>
     <string name="project_name">Project Name</string>
-    <string name="project_description">Project Description</string>
     <string name="project_goal">Project Goal</string>
     <string name="project_archived">Project Archived</string>
     <string name="delete_project_confirmation">Are you sure you want to delete this project? This will also delete all related hypotheses and experiments.</string>

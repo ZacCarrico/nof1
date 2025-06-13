@@ -55,16 +55,6 @@ fun ProjectCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     
-                    if (project.description.isNotBlank()) {
-                        Text(
-                            text = project.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                    
                     if (project.goal.isNotBlank()) {
                         Text(
                             text = "Goal: ${project.goal}",

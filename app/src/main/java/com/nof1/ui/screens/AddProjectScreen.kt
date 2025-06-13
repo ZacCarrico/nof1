@@ -47,21 +47,35 @@ fun AddProjectScreen(
         factory = ProjectViewModelFactory(repository, generationRepository)
     )
     
+    // UI state variables
     var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
     var goal by remember { mutableStateOf("") }
-    
     var nameError by remember { mutableStateOf(false) }
-    var descriptionError by remember { mutableStateOf(false) }
     var goalError by remember { mutableStateOf(false) }
     
-    val isGeneratingHypotheses by viewModel.isGeneratingHypotheses.collectAsState()
-    val generationError by viewModel.generationError.collectAsState()
-    val generatedHypotheses by viewModel.generatedHypotheses.collectAsState()
+    // Generation state
     val apiCallDescription by viewModel.apiCallDescription.collectAsState()
+    val isGeneratingHypotheses by viewModel.isGeneratingHypotheses.collectAsState()
+    val generatedHypotheses by viewModel.generatedHypotheses.collectAsState()
+    val generationError by viewModel.generationError.collectAsState()
+    var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
     
     var projectSaved by remember { mutableStateOf(false) }
-    var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
+    
+    // Save action
+    val saveProject = {
+        nameError = name.isBlank()
+        goalError = goal.isBlank()
+        
+        if (!nameError && !goalError) {
+            val project = Project(
+                name = name.trim(),
+                goal = goal.trim(),
+            )
+            viewModel.insertProject(project)
+            projectSaved = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -77,14 +91,12 @@ fun AddProjectScreen(
                         onClick = {
                             // Validate inputs
                             nameError = name.isBlank()
-                            descriptionError = description.isBlank()
                             goalError = goal.isBlank()
                             
-                            if (!nameError && !descriptionError && !goalError) {
+                            if (!nameError && !goalError) {
                                 val project = Project(
                                     name = name.trim(),
-                                    description = description.trim(),
-                                    goal = goal.trim()
+                                    goal = goal.trim(),
                                 )
                                 viewModel.insertProject(project)
                                 projectSaved = true
@@ -135,20 +147,6 @@ fun AddProjectScreen(
                         label = { Text(stringResource(R.string.project_name)) },
                         isError = nameError,
                         modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                
-                item {
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { newValue: String ->
-                            description = newValue
-                            descriptionError = false
-                        },
-                        label = { Text(stringResource(R.string.project_description)) },
-                        isError = descriptionError,
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 5
                     )
                 }
                 
@@ -210,11 +208,6 @@ fun AddProjectScreen(
                             
                             Text(
                                 text = "Name: ${name.trim()}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            
-                            Text(
-                                text = "Description: ${description.trim()}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             

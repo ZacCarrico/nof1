@@ -14,7 +14,6 @@ data class Project(
     val id: Long = 0,
     
     val name: String,
-    val description: String,
     val goal: String,
     val isArchived: Boolean = false,
     val createdAt: LocalDateTime = LocalDateTime.now(),
