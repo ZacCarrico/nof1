@@ -24,7 +24,7 @@ import com.nof1.data.model.ReminderSettings
         Note::class,
         ReminderSettings::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
