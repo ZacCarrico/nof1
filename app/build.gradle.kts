@@ -91,6 +91,12 @@ dependencies {
     // Security
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
+    // Image handling
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+    
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.work:work-testing:2.8.1")

@@ -29,6 +29,9 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE hypothesisId = :hypothesisId ORDER BY createdAt DESC")
     fun getNotesForHypothesis(hypothesisId: Long): Flow<List<Note>>
 
+    @Query("SELECT * FROM notes WHERE hypothesisId = :hypothesisId ORDER BY createdAt DESC")
+    suspend fun getNotesForHypothesisSync(hypothesisId: Long): List<Note>
+
     @Query("DELETE FROM notes WHERE hypothesisId = :hypothesisId")
     suspend fun deleteAllNotesForHypothesis(hypothesisId: Long)
 } 

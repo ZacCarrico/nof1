@@ -9,6 +9,7 @@ import java.time.LocalDateTime
 /**
  * Represents a note attached to a hypothesis.
  * Each note has a timestamp and can be used to track thoughts, updates, or observations.
+ * Notes can optionally include an attached image.
  */
 @Entity(
     tableName = "notes",
@@ -28,6 +29,7 @@ data class Note(
     
     val hypothesisId: Long,
     val content: String,
+    val imagePath: String? = null, // Optional path to attached image file
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
 ) 

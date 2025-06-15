@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.nof1.data.model.Note
 import com.nof1.data.repository.NoteRepository
+import com.nof1.utils.ImageUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,10 @@ class NoteViewModel(
     
     fun deleteNote(note: Note) {
         viewModelScope.launch {
+            // Clean up image file if it exists
+            note.imagePath?.let { imagePath ->
+                ImageUtils.deleteImage(imagePath)
+            }
             repository.deleteNote(note)
         }
     }

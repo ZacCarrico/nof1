@@ -1,31 +1,44 @@
 package com.nof1.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Note
+import com.nof1.utils.ImageUtils
 import com.nof1.viewmodel.NoteViewModel
 import com.nof1.viewmodel.NoteViewModelFactory
+import java.io.File
 import java.time.format.DateTimeFormatter
 
 /**
@@ -119,12 +132,13 @@ fun NotesScreen(
             },
             onSave = { content ->
                 if (editingNote != null) {
-                    viewModel.updateNote(editingNote!!.copy(content = content))
+                    viewModel.updateNote(editingNote!!.copy(content = content.first, imagePath = content.second))
                 } else {
                     viewModel.insertNote(
                         Note(
                             hypothesisId = hypothesisId,
-                            content = content
+                            content = content.first,
+                            imagePath = content.second
                         )
                     )
                 }
@@ -207,6 +221,24 @@ private fun NoteCard(
                 style = MaterialTheme.typography.bodyLarge
             )
             
+            // Display image if present
+            note.imagePath?.let { imagePath ->
+                if (ImageUtils.imageExists(imagePath)) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(imagePath))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Note image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            
             if (note.updatedAt != note.createdAt) {
                 Text(
                     text = "Updated: ${note.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
@@ -223,9 +255,35 @@ private fun NoteCard(
 private fun NoteDialog(
     note: Note?,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit
+    onSave: (Pair<String, String?>) -> Unit
 ) {
+    val context = LocalContext.current
     var content by remember { mutableStateOf(note?.content ?: "") }
+    var imagePath by remember { mutableStateOf(note?.imagePath) }
+    var showImageMenu by remember { mutableStateOf(false) }
+    
+    // Camera capture
+    var captureImageFile by remember { mutableStateOf<File?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            captureImageFile?.let { file ->
+                imagePath = file.absolutePath
+            }
+        }
+        captureImageFile = null
+    }
+    
+    // Gallery selection
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { selectedUri ->
+            val copiedPath = ImageUtils.copyImageToInternalStorage(context, selectedUri)
+            imagePath = copiedPath
+        }
+    }
     
     // Full-screen overlay that takes up the entire screen
     Box(
@@ -249,7 +307,7 @@ private fun NoteDialog(
                     },
                     actions = {
                         TextButton(
-                            onClick = { onSave(content.trim()) },
+                            onClick = { onSave(Pair(content.trim(), imagePath)) },
                             enabled = content.trim().isNotBlank()
                         ) {
                             Text("Save")
@@ -282,7 +340,7 @@ private fun NoteDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Use this space to capture your thoughts, observations, questions, and insights about your hypothesis. Consider noting:",
+                            text = "Use this space to capture your thoughts, observations, questions, and insights about your hypothesis. You can also attach images.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -291,6 +349,99 @@ private fun NoteDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+                
+                // Image section
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "📷 Attach Image",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                            
+                            Box {
+                                IconButton(
+                                    onClick = { showImageMenu = true }
+                                ) {
+                                    Icon(Icons.Default.AddAPhoto, contentDescription = "Add image")
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = showImageMenu,
+                                    onDismissRequest = { showImageMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Take Photo") },
+                                        onClick = {
+                                            showImageMenu = false
+                                            val file = ImageUtils.createImageFile(context)
+                                            captureImageFile = file
+                                            val uri = ImageUtils.getFileUri(context, file)
+                                            cameraLauncher.launch(uri)
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Choose from Gallery") },
+                                        onClick = {
+                                            showImageMenu = false
+                                            galleryLauncher.launch("image/*")
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Image, contentDescription = null)
+                                        }
+                                    )
+                                    if (imagePath != null) {
+                                        DropdownMenuItem(
+                                            text = { Text("Remove Image") },
+                                            onClick = {
+                                                showImageMenu = false
+                                                imagePath?.let { ImageUtils.deleteImage(it) }
+                                                imagePath = null
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Delete, contentDescription = null)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Display current image if any
+                        imagePath?.let { path ->
+                            if (ImageUtils.imageExists(path)) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(File(path))
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Selected image",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 200.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { showImageMenu = true },
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
                     }
                 }
                 
