@@ -60,6 +60,84 @@ app/src/main/java/com/nof1/
 └── Nof1Application.kt  # Application class
 ```
 
+### Component Communication Diagram
+
+```mermaid
+flowchart TD
+    subgraph UI
+        MainActivity
+        Screens["Screens (UI)"]
+        Components["UI Components"]
+    end
+    subgraph ViewModel
+        ProjectVM["ProjectViewModel"]
+        ReminderVM["ReminderViewModel"]
+        HypothesisVM["HypothesisViewModel"]
+        NoteVM["NoteViewModel"]
+        LogEntryVM["LogEntryViewModel"]
+        SimpleProjectVM["SimpleProjectViewModel"]
+    end
+    subgraph Repository
+        ProjectRepo["ProjectRepository"]
+        ReminderRepo["ReminderRepository"]
+        HypothesisRepo["HypothesisRepository"]
+        NoteRepo["NoteRepository"]
+        LogEntryRepo["LogEntryRepository"]
+        ExperimentRepo["ExperimentRepository"]
+        HypothesisGenRepo["HypothesisGenerationRepository"]
+        InMemoryProjectRepo["InMemoryProjectRepository"]
+    end
+    subgraph Data
+        LocalDB["Nof1Database (DAOs)"]
+        Models["Data Models"]
+        ApiService["LlmApiService"]
+    end
+    subgraph Utils
+        ReminderScheduler
+        NotificationScheduler
+        NotificationHelper
+        PreferencesHelper
+        SecureStorage
+        NotificationReceiver
+        BootCompletedReceiver
+    end
+    MainActivity --> Screens
+    Screens --> Components
+    Components -->|"observe/use"| ProjectVM
+    Components -->|"observe/use"| ReminderVM
+    Components -->|"observe/use"| HypothesisVM
+    Components -->|"observe/use"| NoteVM
+    Components -->|"observe/use"| LogEntryVM
+    Components -->|"observe/use"| SimpleProjectVM
+    ProjectVM --> ProjectRepo
+    ReminderVM --> ReminderRepo
+    HypothesisVM --> HypothesisRepo
+    NoteVM --> NoteRepo
+    LogEntryVM --> LogEntryRepo
+    SimpleProjectVM --> InMemoryProjectRepo
+    ProjectRepo --> LocalDB
+    ReminderRepo --> LocalDB
+    HypothesisRepo --> LocalDB
+    NoteRepo --> LocalDB
+    LogEntryRepo --> LocalDB
+    ExperimentRepo --> LocalDB
+    HypothesisGenRepo --> ApiService
+    LocalDB --> Models
+    ApiService --> Models
+    ReminderScheduler --> NotificationScheduler
+    NotificationScheduler --> NotificationHelper
+    NotificationHelper --> PreferencesHelper
+    PreferencesHelper --> SecureStorage
+    NotificationReceiver --> NotificationHelper
+    BootCompletedReceiver --> ReminderScheduler
+    ReminderVM --> ReminderScheduler
+    ReminderScheduler --> ReminderRepo
+    NotificationScheduler --> ReminderRepo
+    NotificationHelper --> ReminderRepo
+    NotificationReceiver --> ReminderRepo
+    BootCompletedReceiver --> ReminderRepo
+```
+
 ### Database Schema
 - **Projects**: id, name, description, goal, isArchived, timestamps
 - **Hypotheses**: id, projectId, name, description, isArchived, timestamps
