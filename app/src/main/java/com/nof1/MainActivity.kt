@@ -14,13 +14,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.nof1.ui.components.NotificationPermissionDialog
 import com.nof1.ui.navigation.Nof1Navigation
+import com.nof1.ui.screens.AuthScreen
 import com.nof1.ui.theme.Nof1Theme
 import com.nof1.utils.NotificationHelper
 import com.nof1.utils.PreferencesHelper
+import com.nof1.viewmodel.AuthViewModel
 
 class MainActivity : ComponentActivity() {
     
@@ -47,56 +50,71 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.createNotificationChannel(this)
         
         setContent {
+            val authViewModel: AuthViewModel = viewModel()
+            val authUiState by authViewModel.uiState.collectAsState()
             var showNotificationDialog by remember { mutableStateOf(false) }
             val navController = rememberNavController()
-            
-            // Handle notification navigation
-            LaunchedEffect(intent) {
-                // Small delay to ensure NavController is initialized
-                kotlinx.coroutines.delay(100)
-                handleNotificationIntent(navController)
-            }
-            
-            // Check if we should show notification permission dialog
-            LaunchedEffect(Unit) {
-                val isFirstLaunch = preferencesHelper.isFirstLaunch()
-                val hasPermissionBeenRequested = preferencesHelper.isNotificationPermissionRequested()
-                val hasNotificationPermission = NotificationHelper.hasNotificationPermission(this@MainActivity)
-                
-                if (isFirstLaunch && !hasPermissionBeenRequested && !hasNotificationPermission) {
-                    showNotificationDialog = true
-                }
-                
-                // Mark first launch as completed
-                if (isFirstLaunch) {
-                    preferencesHelper.setFirstLaunchCompleted()
-                }
-            }
             
             Nof1Theme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Nof1Navigation(navController = navController)
-                }
-                
-                // Show notification permission dialog if needed
-                if (showNotificationDialog) {
-                    NotificationPermissionDialog(
-                        onAllowNotifications = {
-                            showNotificationDialog = false
-                            requestNotificationPermission()
-                        },
-                        onDenyNotifications = {
-                            showNotificationDialog = false
-                            preferencesHelper.setNotificationPermissionRequested()
-                        },
-                        onDismiss = {
-                            showNotificationDialog = false
-                            preferencesHelper.setNotificationPermissionRequested()
+                    if (authUiState.isAuthenticated) {
+                        // User is authenticated, show main app
+                        
+                        // Handle notification navigation
+                        LaunchedEffect(intent) {
+                            // Small delay to ensure NavController is initialized
+                            kotlinx.coroutines.delay(100)
+                            handleNotificationIntent(navController)
                         }
-                    )
+                        
+                        // Check if we should show notification permission dialog
+                        LaunchedEffect(Unit) {
+                            val isFirstLaunch = preferencesHelper.isFirstLaunch()
+                            val hasPermissionBeenRequested = preferencesHelper.isNotificationPermissionRequested()
+                            val hasNotificationPermission = NotificationHelper.hasNotificationPermission(this@MainActivity)
+                            
+                            if (isFirstLaunch && !hasPermissionBeenRequested && !hasNotificationPermission) {
+                                showNotificationDialog = true
+                            }
+                            
+                            // Mark first launch as completed
+                            if (isFirstLaunch) {
+                                preferencesHelper.setFirstLaunchCompleted()
+                            }
+                        }
+                        
+                        Nof1Navigation(navController = navController)
+                        
+                        // Show notification permission dialog if needed
+                        if (showNotificationDialog) {
+                            NotificationPermissionDialog(
+                                onAllowNotifications = {
+                                    showNotificationDialog = false
+                                    requestNotificationPermission()
+                                },
+                                onDenyNotifications = {
+                                    showNotificationDialog = false
+                                    preferencesHelper.setNotificationPermissionRequested()
+                                },
+                                onDismiss = {
+                                    showNotificationDialog = false
+                                    preferencesHelper.setNotificationPermissionRequested()
+                                }
+                            )
+                        }
+                    } else {
+                        // User is not authenticated, show auth screen
+                        AuthScreen(
+                            onAuthSuccess = {
+                                // Authentication successful, main app will be shown automatically
+                                // due to authUiState.isAuthenticated becoming true
+                            },
+                            authViewModel = authViewModel
+                        )
+                    }
                 }
             }
         }

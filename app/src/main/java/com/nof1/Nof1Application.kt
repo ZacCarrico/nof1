@@ -20,10 +20,16 @@ class Nof1Application : Application() {
     
     // Firebase Repositories
     val firebaseProjectRepository by lazy { FirebaseProjectRepository() }
+    val firebaseHypothesisRepository by lazy { FirebaseHypothesisRepository() }
+    val firebaseExperimentRepository by lazy { FirebaseExperimentRepository() }
+    val firebaseLogEntryRepository by lazy { FirebaseLogEntryRepository() }
     
     // Hybrid Repositories (combining local + cloud)
     val hybridProjectRepository by lazy { 
         HybridProjectRepository(database.projectDao(), firebaseProjectRepository) 
+    }
+    val hybridHypothesisRepository by lazy {
+        HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository)
     }
     
     override fun onCreate() {
