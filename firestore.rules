@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      allow read, write: if isAuthenticated() && 
+        (resource == null || isOwner(resource.data.userId));
+      allow create: if isAuthenticated() && 
+        isOwner(request.resource.data.userId);
+    }
+    
+    // Hypotheses collection
+    match /hypotheses/{hypothesisId} {
+      allow read, write: if isAuthenticated() && 
+        (resource == null || isOwner(resource.data.userId));
+      allow create: if isAuthenticated() && 
+        isOwner(request.resource.data.userId);
+    }
+    
+    // Experiments collection
+    match /experiments/{experimentId} {
+      allow read, write: if isAuthenticated() && 
+        (resource == null || isOwner(resource.data.userId));
+      allow create: if isAuthenticated() && 
+        isOwner(request.resource.data.userId);
+    }
+    
+    // Log entries collection
+    match /log_entries/{logEntryId} {
+      allow read, write: if isAuthenticated() && 
+        (resource == null || isOwner(resource.data.userId));
+      allow create: if isAuthenticated() && 
+        isOwner(request.resource.data.userId);
+    }
+    
+    // User profiles collection (optional)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && 
+        request.auth.uid == userId;
+    }
+  }
+}
