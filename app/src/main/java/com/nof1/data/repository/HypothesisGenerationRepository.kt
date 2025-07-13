@@ -5,7 +5,7 @@ import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.LlmRequest
 import com.nof1.data.model.Message
 import com.nof1.data.model.Project
-import com.nof1.data.repository.HypothesisRepository
+import com.nof1.data.repository.HypothesisRepositoryInterface
 import com.nof1.utils.SecureStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 
 class HypothesisGenerationRepository(
     private val secureStorage: SecureStorage,
-    private val hypothesisRepository: HypothesisRepository? = null
+    private val hypothesisRepository: HypothesisRepositoryInterface? = null
 ) {
     
     private val apiService by lazy {

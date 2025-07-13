@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.Project
-import com.nof1.data.repository.HypothesisRepository
+import com.nof1.data.repository.HypothesisRepositoryInterface
 import com.nof1.data.repository.HypothesisGenerationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * ViewModel for managing Hypothesis data and UI state.
  */
 class HypothesisViewModel(
-    private val repository: HypothesisRepository,
+    private val repository: HypothesisRepositoryInterface,
     private val generationRepository: HypothesisGenerationRepository? = null
 ) : ViewModel() {
     
@@ -87,7 +87,7 @@ class HypothesisViewModel(
 }
 
 class HypothesisViewModelFactory(
-    private val repository: HypothesisRepository,
+    private val repository: HypothesisRepositoryInterface,
     private val generationRepository: HypothesisGenerationRepository? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

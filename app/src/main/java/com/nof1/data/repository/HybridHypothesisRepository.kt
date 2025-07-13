@@ -16,7 +16,7 @@ class HybridHypothesisRepository(
     private val hypothesisDao: HypothesisDao,
     private val firebaseHypothesisRepository: FirebaseHypothesisRepository,
     private val mappingRepository: FirebaseMappingRepository
-) {
+) : HypothesisRepositoryInterface {
     
     // Local storage for offline capability
     private val localRepository = HypothesisRepository(hypothesisDao)
@@ -55,9 +55,17 @@ class HybridHypothesisRepository(
     }
     
     /**
+     * Insert hypothesis (backward compatibility method) - uses projectId from hypothesis.projectId
+     * This method maintains compatibility with legacy HypothesisRepository interface
+     */
+    override suspend fun insertHypothesis(hypothesis: Hypothesis): Long {
+        return insertHypothesis(hypothesis, hypothesis.projectId)
+    }
+    
+    /**
      * Update hypothesis - updates locally first, then syncs to cloud
      */
-    suspend fun updateHypothesis(hypothesis: Hypothesis) {
+    override suspend fun updateHypothesis(hypothesis: Hypothesis) {
         val updatedHypothesis = hypothesis.copy(updatedAt = LocalDateTime.now())
         
         // Update locally first
@@ -85,7 +93,7 @@ class HybridHypothesisRepository(
     /**
      * Delete hypothesis - deletes locally first, then syncs to cloud
      */
-    suspend fun deleteHypothesis(hypothesis: Hypothesis) {
+    override suspend fun deleteHypothesis(hypothesis: Hypothesis) {
         // Delete locally first
         localRepository.deleteHypothesis(hypothesis)
         
@@ -110,7 +118,7 @@ class HybridHypothesisRepository(
     /**
      * Archive hypothesis - archives locally first, then syncs to cloud
      */
-    suspend fun archiveHypothesis(hypothesis: Hypothesis) {
+    override suspend fun archiveHypothesis(hypothesis: Hypothesis) {
         // Archive locally first
         localRepository.archiveHypothesis(hypothesis)
         
@@ -176,30 +184,39 @@ class HybridHypothesisRepository(
      */
     suspend fun syncFromCloud(firebaseProjectId: String, localProjectId: Long) {
         try {
-            firebaseHypothesisRepository.getHypothesesByProject(firebaseProjectId).collect { firebaseHypotheses ->
-                // Convert Firebase hypotheses to Room hypotheses and save locally
-                firebaseHypotheses.forEach { firebaseHypothesis ->
-                    val localHypothesis = firebaseHypothesis.toHypothesis(localProjectId)
-                    // Check if hypothesis already exists locally
-                    val existingHypothesis = getHypothesisByFirebaseId(firebaseHypothesis.id)
-                    if (existingHypothesis == null) {
-                        val localId = localRepository.insertHypothesis(localHypothesis)
-                        // Store mapping
-                        mappingRepository.storeMapping(
-                            FirebaseMappingRepository.ENTITY_TYPE_HYPOTHESIS,
-                            localId,
-                            firebaseHypothesis.id
-                        )
-                    } else {
-                        // Update existing hypothesis if cloud version is newer
-                        if (isCloudVersionNewer(firebaseHypothesis, existingHypothesis)) {
-                            localRepository.updateHypothesis(localHypothesis.copy(id = existingHypothesis.id))
-                        }
+            android.util.Log.d("HybridHypothesisRepository", "Starting hypothesis sync for project: $firebaseProjectId")
+            // Use first() to get one-time snapshot instead of continuous listening
+            val firebaseHypotheses = firebaseHypothesisRepository.getHypothesesByProject(firebaseProjectId).first()
+            android.util.Log.d("HybridHypothesisRepository", "Syncing ${firebaseHypotheses.size} hypotheses from cloud")
+            
+            // Convert Firebase hypotheses to Room hypotheses and save locally
+            firebaseHypotheses.forEach { firebaseHypothesis ->
+                val localHypothesis = firebaseHypothesis.toHypothesis(localProjectId)
+                android.util.Log.d("HybridHypothesisRepository", "Processing Firebase hypothesis: ${firebaseHypothesis.name} (${firebaseHypothesis.id})")
+                
+                // Check if hypothesis already exists locally
+                val existingHypothesis = getHypothesisByFirebaseId(firebaseHypothesis.id)
+                if (existingHypothesis == null) {
+                    android.util.Log.d("HybridHypothesisRepository", "Inserting new hypothesis: ${localHypothesis.name}")
+                    val localId = localRepository.insertHypothesis(localHypothesis)
+                    // Store mapping
+                    mappingRepository.storeMapping(
+                        FirebaseMappingRepository.ENTITY_TYPE_HYPOTHESIS,
+                        localId,
+                        firebaseHypothesis.id
+                    )
+                } else {
+                    android.util.Log.d("HybridHypothesisRepository", "Hypothesis already exists locally: ${existingHypothesis.name}")
+                    // Update existing hypothesis if cloud version is newer
+                    if (isCloudVersionNewer(firebaseHypothesis, existingHypothesis)) {
+                        android.util.Log.d("HybridHypothesisRepository", "Updating existing hypothesis from cloud: ${localHypothesis.name}")
+                        localRepository.updateHypothesis(localHypothesis.copy(id = existingHypothesis.id))
                     }
                 }
             }
+            android.util.Log.d("HybridHypothesisRepository", "Hypothesis sync completed successfully")
         } catch (e: Exception) {
-            android.util.Log.e("HybridHypothesisRepository", "Failed to sync hypotheses from cloud: ${e.message}")
+            android.util.Log.e("HybridHypothesisRepository", "Failed to sync hypotheses from cloud: ${e.message}", e)
         }
     }
     

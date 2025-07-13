@@ -53,12 +53,12 @@ fun ProjectDetailScreen(
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
         if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
-            HypothesisGenerationRepository(secureStorage, application.hypothesisRepository)
+            HypothesisGenerationRepository(secureStorage, application.hybridHypothesisRepository)
         } else null
     }
     
     val hypothesisViewModel: HypothesisViewModel = viewModel(
-        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
+        factory = HypothesisViewModelFactory(application.hybridHypothesisRepository, generationRepository)
     )
     
     val reminderViewModel: ReminderViewModel = viewModel(

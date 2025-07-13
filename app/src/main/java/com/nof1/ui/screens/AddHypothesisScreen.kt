@@ -41,12 +41,12 @@ fun AddHypothesisScreen(
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
         if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
-            HypothesisGenerationRepository(secureStorage, application.hypothesisRepository)
+            HypothesisGenerationRepository(secureStorage, application.hybridHypothesisRepository)
         } else null
     }
     
     val viewModel: HypothesisViewModel = viewModel(
-        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
+        factory = HypothesisViewModelFactory(application.hybridHypothesisRepository, generationRepository)
     )
     
     var project by remember { mutableStateOf<Project?>(null) }

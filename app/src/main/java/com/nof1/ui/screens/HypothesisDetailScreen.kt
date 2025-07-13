@@ -39,7 +39,7 @@ fun HypothesisDetailScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val repository = application.hypothesisRepository
+    val repository = application.hybridHypothesisRepository
     val noteRepository = application.noteRepository
     val reminderRepository = application.reminderRepository
     

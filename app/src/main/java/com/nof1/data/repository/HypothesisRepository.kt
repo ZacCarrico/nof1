@@ -11,21 +11,21 @@ import java.time.LocalDateTime
  */
 class HypothesisRepository(
     private val hypothesisDao: HypothesisDao
-) {
-    suspend fun insertHypothesis(hypothesis: Hypothesis): Long {
+) : HypothesisRepositoryInterface {
+    override suspend fun insertHypothesis(hypothesis: Hypothesis): Long {
         return hypothesisDao.insert(hypothesis)
     }
 
-    suspend fun updateHypothesis(hypothesis: Hypothesis) {
+    override suspend fun updateHypothesis(hypothesis: Hypothesis) {
         val updatedHypothesis = hypothesis.copy(updatedAt = LocalDateTime.now())
         hypothesisDao.update(updatedHypothesis)
     }
 
-    suspend fun deleteHypothesis(hypothesis: Hypothesis) {
+    override suspend fun deleteHypothesis(hypothesis: Hypothesis) {
         hypothesisDao.delete(hypothesis)
     }
 
-    suspend fun archiveHypothesis(hypothesis: Hypothesis) {
+    override suspend fun archiveHypothesis(hypothesis: Hypothesis) {
         val archivedHypothesis = hypothesis.copy(
             isArchived = true,
             updatedAt = LocalDateTime.now()
