@@ -21,6 +21,16 @@ class HybridProjectRepository(
     // Local storage for offline capability
     private val localRepository = ProjectRepository(projectDao)
     
+    // Hypothesis repository for syncing hypotheses when projects are synced
+    private var hybridHypothesisRepository: HybridHypothesisRepository? = null
+    
+    /**
+     * Set the hypothesis repository after initialization to avoid circular dependency
+     */
+    fun setHypothesisRepository(hypothesisRepository: HybridHypothesisRepository) {
+        this.hybridHypothesisRepository = hypothesisRepository
+    }
+    
     /**
      * Insert project - saves locally first, then syncs to cloud
      */
@@ -189,16 +199,61 @@ class HybridProjectRepository(
             // Convert Firebase projects to Room projects and save locally
             firebaseProjects.forEach { firebaseProject ->
                 val localProject = firebaseProject.toProject()
-                // Check if project already exists locally
+                android.util.Log.d("HybridProjectRepository", "Processing Firebase project: ${firebaseProject.name} (${firebaseProject.id})")
+                
+                // Check if project already exists locally (either by mapping or by name as fallback)
                 val existingProject = getProjectByFirebaseId(firebaseProject.id)
-                if (existingProject == null) {
+                android.util.Log.d("HybridProjectRepository", "Existing project from mapping: $existingProject")
+                
+                val existingByName = if (existingProject == null) {
+                    localRepository.getAllProjects().first().find { it.name == localProject.name && it.goal == localProject.goal }
+                } else null
+                android.util.Log.d("HybridProjectRepository", "Existing project by name: $existingByName")
+                
+                val finalExistingProject = existingProject ?: existingByName
+                
+                if (finalExistingProject == null) {
                     android.util.Log.d("HybridProjectRepository", "Inserting new project from cloud: ${localProject.name}")
-                    localRepository.insertProject(localProject)
+                    val localId = localRepository.insertProject(localProject)
+                    
+                    // Store mapping between Firebase ID and local ID
+                    android.util.Log.d("HybridProjectRepository", "Storing mapping: local=$localId, firebase=${firebaseProject.id}")
+                    mappingRepository.storeMapping(
+                        FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                        localId,
+                        firebaseProject.id
+                    )
+                    
+                    // Sync hypotheses for this project
+                    hybridHypothesisRepository?.let { hypothesisRepo ->
+                        android.util.Log.d("HybridProjectRepository", "Syncing hypotheses for project: ${firebaseProject.id}")
+                        try {
+                            hypothesisRepo.syncFromCloud(firebaseProject.id, localId)
+                        } catch (e: Exception) {
+                            android.util.Log.e("HybridProjectRepository", "Failed to sync hypotheses for project ${firebaseProject.id}: ${e.message}")
+                        }
+                    }
                 } else {
+                    android.util.Log.d("HybridProjectRepository", "Project already exists locally: ${finalExistingProject.name} (${finalExistingProject.id})")
+                    
+                    // Ensure mapping exists for this project  
+                    val existingMapping = mappingRepository.getFirebaseId(
+                        FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                        finalExistingProject.id
+                    )
+                    if (existingMapping == null) {
+                        android.util.Log.d("HybridProjectRepository", "Creating missing mapping for existing project")
+                        mappingRepository.storeMapping(
+                            FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                            finalExistingProject.id,
+                            firebaseProject.id
+                        )
+                    }
+                    
                     // Update existing project if cloud version is newer
-                    if (isCloudVersionNewer(firebaseProject, existingProject)) {
+                    if (isCloudVersionNewer(firebaseProject, finalExistingProject)) {
                         android.util.Log.d("HybridProjectRepository", "Updating existing project from cloud: ${localProject.name}")
-                        localRepository.updateProject(localProject.copy(id = existingProject.id))
+                        localRepository.updateProject(localProject.copy(id = finalExistingProject.id))
                     }
                 }
             }
@@ -240,6 +295,10 @@ class HybridProjectRepository(
                 val localProjects = firebaseProjects.map { it.toProject() }
                 emit(localProjects)
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            android.util.Log.d("HybridProjectRepository", "Cloud projects collection cancelled")
+            // Don't log as error - this is expected when scope is cancelled
+            throw e
         } catch (e: Exception) {
             android.util.Log.e("HybridProjectRepository", "Error getting cloud projects: ${e.message}", e)
             emit(emptyList())

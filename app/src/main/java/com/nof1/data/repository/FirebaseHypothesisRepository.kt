@@ -75,6 +75,9 @@ class FirebaseHypothesisRepository : BaseFirebaseRepository() {
                 }.collect { hypotheses ->
                     emit(hypotheses)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.d("FirebaseHypothesisRepository", "Active hypotheses collection cancelled")
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("FirebaseHypothesisRepository", "Error getting active hypotheses: ${e.message}", e)
                 emit(emptyList<FirebaseHypothesis>())

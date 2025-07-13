@@ -55,6 +55,9 @@ class FirebaseProjectRepository : BaseFirebaseRepository() {
                     android.util.Log.d("FirebaseProjectRepository", "Firebase returned ${projects.size} active projects")
                     emit(projects)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.d("FirebaseProjectRepository", "Active projects collection cancelled")
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("FirebaseProjectRepository", "Error getting active projects: ${e.message}", e)
                 emit(emptyList<FirebaseProject>())
@@ -86,6 +89,9 @@ class FirebaseProjectRepository : BaseFirebaseRepository() {
                     android.util.Log.d("FirebaseProjectRepository", "Firebase returned ${projects.size} total projects")
                     emit(projects)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.d("FirebaseProjectRepository", "Projects collection cancelled")
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("FirebaseProjectRepository", "Error getting all projects: ${e.message}", e)
                 emit(emptyList<FirebaseProject>())

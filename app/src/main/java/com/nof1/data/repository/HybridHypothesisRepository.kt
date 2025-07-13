@@ -224,6 +224,10 @@ class HybridHypothesisRepository(
                 android.util.Log.d("HybridHypothesisRepository", "No Firebase project ID found for local project $projectId")
                 emit(emptyList<Hypothesis>())
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            android.util.Log.d("HybridHypothesisRepository", "Cloud hypotheses collection cancelled")
+            // Don't log as error - this is expected when scope is cancelled
+            throw e
         } catch (e: Exception) {
             android.util.Log.e("HybridHypothesisRepository", "Error getting cloud hypotheses: ${e.message}", e)
             emit(emptyList<Hypothesis>())

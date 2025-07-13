@@ -31,12 +31,15 @@ class Nof1Application : Application() {
         FirebaseMappingRepository(database.firebaseMappingDao(), authManager)
     }
     
-    // Hybrid Repositories (combining local + cloud)
-    val hybridProjectRepository by lazy { 
-        HybridProjectRepository(database.projectDao(), firebaseProjectRepository, firebaseMappingRepository) 
-    }
+    // Hybrid Repositories (combining local + cloud)  
     val hybridHypothesisRepository by lazy {
         HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository, firebaseMappingRepository)
+    }
+    val hybridProjectRepository by lazy { 
+        val projectRepo = HybridProjectRepository(database.projectDao(), firebaseProjectRepository, firebaseMappingRepository)
+        // Set hypothesis repository after initialization to avoid circular dependency
+        projectRepo.setHypothesisRepository(hybridHypothesisRepository)
+        projectRepo
     }
     // TODO: Create HybridExperimentRepository
     // val hybridExperimentRepository by lazy {
