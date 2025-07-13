@@ -12,6 +12,7 @@ data class FirebaseExperiment(
     val id: String = "",
     
     val hypothesisId: String = "",
+    val projectId: String = "",
     val name: String = "",
     val description: String = "",
     val question: String = "",
@@ -36,7 +37,7 @@ data class FirebaseExperiment(
     val lastLoggedAt: Timestamp? = null
 ) {
     // No-argument constructor required by Firestore
-    constructor() : this("", "", "", "", "", true, "DAILY", 9, 0, null, false, "", null, null, null, null)
+    constructor() : this("", "", "", "", "", "", true, "DAILY", 9, 0, null, false, "", null, null, null, null)
     
     /**
      * Convert to Room Experiment for local storage/offline support
@@ -72,10 +73,11 @@ data class FirebaseExperiment(
 /**
  * Extension function to convert Room Experiment to Firebase Experiment
  */
-fun Experiment.toFirebaseExperiment(userId: String, firebaseHypothesisId: String, firebaseId: String = ""): FirebaseExperiment {
+fun Experiment.toFirebaseExperiment(userId: String, firebaseHypothesisId: String, firebaseProjectId: String, firebaseId: String = ""): FirebaseExperiment {
     return FirebaseExperiment(
         id = firebaseId,
         hypothesisId = firebaseHypothesisId,
+        projectId = firebaseProjectId,
         name = name,
         description = description,
         question = question,

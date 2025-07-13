@@ -31,8 +31,7 @@ import com.nof1.viewmodel.HybridProjectViewModelFactory
 fun ProjectListScreen(
     onNavigateToProject: (Long) -> Unit,
     onNavigateToAddProject: () -> Unit,
-    onNavigateToSettings: () -> Unit,
-    onNavigateToSyncDebug: () -> Unit = {}
+    onNavigateToSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
@@ -60,12 +59,6 @@ fun ProjectListScreen(
                         Icon(
                             Icons.Default.Archive,
                             contentDescription = stringResource(R.string.show_archived)
-                        )
-                    }
-                    IconButton(onClick = onNavigateToSyncDebug) {
-                        Icon(
-                            Icons.Default.BugReport,
-                            contentDescription = "Debug Sync"
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {

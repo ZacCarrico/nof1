@@ -34,7 +34,10 @@ class Nof1Application : Application() {
         HybridProjectRepository(database.projectDao(), firebaseProjectRepository, firebaseMappingRepository) 
     }
     val hybridHypothesisRepository by lazy {
-        HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository)
+        HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository, firebaseMappingRepository)
+    }
+    val hybridExperimentRepository by lazy {
+        HybridExperimentRepository(database.experimentDao(), firebaseExperimentRepository, firebaseMappingRepository)
     }
     
     override fun onCreate() {
@@ -56,16 +59,6 @@ class Nof1Application : Application() {
     val projectRepository by lazy { ProjectRepository(database.projectDao()) }
     val hypothesisRepository by lazy { HypothesisRepository(database.hypothesisDao()) }
     val experimentRepository by lazy { ExperimentRepository(database.experimentDao()) }
-    
-    // Debug Helper
-    val syncDebugHelper by lazy { 
-        com.nof1.utils.SyncDebugHelper(
-            authManager,
-            projectRepository,
-            firebaseProjectRepository,
-            firebaseMappingRepository
-        )
-    }
     val logEntryRepository by lazy { LogEntryRepository(database.logEntryDao()) }
     val noteRepository by lazy { NoteRepository(database.noteDao()) }
     val reminderRepository by lazy { ReminderRepository(database.reminderSettingsDao()) }

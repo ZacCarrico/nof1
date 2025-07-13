@@ -28,6 +28,7 @@ data class Experiment(
     val id: Long = 0,
     
     val hypothesisId: Long,
+    val projectId: Long? = null, // For Firebase syncing, nullable for backwards compatibility
     val name: String,
     val description: String,
     val question: String,

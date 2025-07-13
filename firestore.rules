@@ -25,7 +25,7 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && 
         (resource == null || isOwner(resource.data.userId));
       allow create: if isAuthenticated() && 
-        isOwner(request.resource.data.userId);
+        request.resource.data.userId == request.auth.uid;
     }
     
     // Experiments collection
@@ -33,7 +33,7 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && 
         (resource == null || isOwner(resource.data.userId));
       allow create: if isAuthenticated() && 
-        isOwner(request.resource.data.userId);
+        request.resource.data.userId == request.auth.uid;
     }
     
     // Log entries collection
@@ -41,7 +41,7 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && 
         (resource == null || isOwner(resource.data.userId));
       allow create: if isAuthenticated() && 
-        isOwner(request.resource.data.userId);
+        request.resource.data.userId == request.auth.uid;
     }
     
     // User profiles collection (optional)
