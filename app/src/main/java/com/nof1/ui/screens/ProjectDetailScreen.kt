@@ -46,7 +46,7 @@ fun ProjectDetailScreen(
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val projectRepository = application.projectRepository
+    val projectRepository = application.hybridProjectRepository
     val hypothesisRepository = application.hypothesisRepository
     val reminderRepository = application.reminderRepository
     

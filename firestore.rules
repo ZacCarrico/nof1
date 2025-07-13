@@ -17,7 +17,7 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && 
         (resource == null || isOwner(resource.data.userId));
       allow create: if isAuthenticated() && 
-        isOwner(request.resource.data.userId);
+        request.resource.data.userId == request.auth.uid;
     }
     
     // Hypotheses collection

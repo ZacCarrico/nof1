@@ -55,7 +55,8 @@ fun Project.toFirebaseProject(userId: String, firebaseId: String = ""): Firebase
         goal = goal,
         isArchived = isArchived,
         userId = userId,
-        createdAt = Timestamp(java.util.Date.from(createdAt.atZone(java.time.ZoneId.systemDefault()).toInstant())),
-        updatedAt = Timestamp(java.util.Date.from(updatedAt.atZone(java.time.ZoneId.systemDefault()).toInstant()))
+        // Let Firebase set these automatically with @ServerTimestamp
+        createdAt = null,
+        updatedAt = null
     )
 } 

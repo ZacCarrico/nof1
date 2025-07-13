@@ -13,7 +13,8 @@ import java.time.LocalDateTime
  */
 class HybridProjectRepository(
     private val projectDao: ProjectDao,
-    private val firebaseProjectRepository: FirebaseProjectRepository
+    private val firebaseProjectRepository: FirebaseProjectRepository,
+    private val mappingRepository: FirebaseMappingRepository
 ) {
     
     // Local storage for offline capability
@@ -29,10 +30,18 @@ class HybridProjectRepository(
         // Try to sync to cloud
         try {
             val firebaseId = firebaseProjectRepository.insertProject(project)
-            // TODO: Store mapping between local ID and Firebase ID for sync
+            if (firebaseId != null) {
+                // Store mapping between local ID and Firebase ID
+                mappingRepository.storeMapping(
+                    FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                    localId,
+                    firebaseId
+                )
+            }
         } catch (e: Exception) {
             // Cloud sync failed, but local save succeeded
             // Will sync later when connection is restored
+            android.util.Log.e("HybridProjectRepository", "Failed to sync project to cloud: ${e.message}")
         }
         
         return localId
@@ -55,6 +64,7 @@ class HybridProjectRepository(
             }
         } catch (e: Exception) {
             // Cloud sync failed, mark for later sync
+            android.util.Log.e("HybridProjectRepository", "Failed to update project in cloud: ${e.message}")
             // TODO: Implement sync queue
         }
     }
@@ -63,17 +73,25 @@ class HybridProjectRepository(
      * Delete project - deletes locally first, then syncs to cloud
      */
     suspend fun deleteProject(project: Project) {
+        // Get Firebase ID before deleting locally
+        val firebaseId = getFirebaseIdForProject(project.id)
+        
         // Delete locally first
         localRepository.deleteProject(project)
         
         // Try to sync to cloud
         try {
-            val firebaseId = getFirebaseIdForProject(project.id)
             if (firebaseId != null) {
                 firebaseProjectRepository.deleteProject(firebaseId)
+                // Clean up mapping
+                mappingRepository.deleteMappingByLocalId(
+                    FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                    project.id
+                )
             }
         } catch (e: Exception) {
             // Cloud sync failed, mark for later sync
+            android.util.Log.e("HybridProjectRepository", "Failed to delete project from cloud: ${e.message}")
         }
     }
     
@@ -139,6 +157,13 @@ class HybridProjectRepository(
         }
     }
     
+    /**
+     * Get project with hypotheses
+     */
+    fun getProjectWithHypotheses(projectId: Long): Flow<ProjectWithHypotheses?> {
+        return localRepository.getProjectWithHypotheses(projectId)
+    }
+
     /**
      * Get project with hypotheses and experiments
      */
@@ -226,14 +251,19 @@ class HybridProjectRepository(
     }
     
     private suspend fun getFirebaseIdForProject(localId: Long): String? {
-        // TODO: Implement mapping between local and Firebase IDs
-        // This would typically be stored in a separate mapping table
-        return null
+        return mappingRepository.getFirebaseId(
+            FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+            localId
+        )
     }
     
     private suspend fun getProjectByFirebaseId(firebaseId: String): Project? {
-        // TODO: Implement reverse mapping lookup
-        return null
+        val localId = mappingRepository.getLocalId(
+            FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+            firebaseId
+        ) ?: return null
+        
+        return localRepository.getProjectById(localId)
     }
     
     private fun isCloudVersionNewer(firebaseProject: FirebaseProject, localProject: Project): Boolean {

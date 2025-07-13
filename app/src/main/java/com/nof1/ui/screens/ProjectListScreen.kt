@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +20,8 @@ import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Project
 import com.nof1.ui.components.ProjectCard
-import com.nof1.viewmodel.SimpleProjectViewModel
+import com.nof1.viewmodel.HybridProjectViewModel
+import com.nof1.viewmodel.HybridProjectViewModelFactory
 
 /**
  * Screen displaying the list of projects.
@@ -29,11 +31,18 @@ import com.nof1.viewmodel.SimpleProjectViewModel
 fun ProjectListScreen(
     onNavigateToProject: (Long) -> Unit,
     onNavigateToAddProject: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToSyncDebug: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val viewModel = remember { SimpleProjectViewModel(application.projectRepository) }
+    val viewModel: HybridProjectViewModel = viewModel(
+        factory = HybridProjectViewModelFactory(
+            application.hybridProjectRepository,
+            null, // No hypothesis generation in list screen
+            application.authManager
+        )
+    )
     
     val showArchived by viewModel.showArchived.collectAsState()
     val projects by if (showArchived) {
@@ -51,6 +60,12 @@ fun ProjectListScreen(
                         Icon(
                             Icons.Default.Archive,
                             contentDescription = stringResource(R.string.show_archived)
+                        )
+                    }
+                    IconButton(onClick = onNavigateToSyncDebug) {
+                        Icon(
+                            Icons.Default.BugReport,
+                            contentDescription = "Debug Sync"
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {

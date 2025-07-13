@@ -13,6 +13,7 @@ import com.nof1.ui.screens.LogEntryScreen
 import com.nof1.ui.screens.NotesScreen
 import com.nof1.ui.screens.ProjectDetailScreen
 import com.nof1.ui.screens.ProjectListScreen
+import com.nof1.ui.screens.SyncDebugScreen
 
 /**
  * Main navigation component for the app.
@@ -35,6 +36,9 @@ fun Nof1Navigation(
                 },
                 onNavigateToSettings = {
                     navController.navigate("api_settings")
+                },
+                onNavigateToSyncDebug = {
+                    navController.navigate("sync_debug")
                 }
             )
         }
@@ -125,6 +129,14 @@ fun Nof1Navigation(
         
         composable("api_settings") {
             ApiKeySettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("sync_debug") {
+            SyncDebugScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

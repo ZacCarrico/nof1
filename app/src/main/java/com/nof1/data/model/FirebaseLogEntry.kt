@@ -48,6 +48,7 @@ fun LogEntry.toFirebaseLogEntry(userId: String, firebaseExperimentId: String, fi
         response = response,
         isFromNotification = isFromNotification,
         userId = userId,
-        createdAt = Timestamp(java.util.Date.from(createdAt.atZone(java.time.ZoneId.systemDefault()).toInstant()))
+        // Let Firebase set this automatically with @ServerTimestamp
+        createdAt = null
     )
 } 

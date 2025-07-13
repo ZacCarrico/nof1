@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.nof1.data.model.Experiment
+import com.nof1.data.model.FirebaseMapping
 import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.LogEntry
 import com.nof1.data.model.Note
@@ -22,9 +23,10 @@ import com.nof1.data.model.ReminderSettings
         Experiment::class,
         LogEntry::class,
         Note::class,
-        ReminderSettings::class
+        ReminderSettings::class,
+        FirebaseMapping::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -35,6 +37,7 @@ abstract class Nof1Database : RoomDatabase() {
     abstract fun logEntryDao(): LogEntryDao
     abstract fun noteDao(): NoteDao
     abstract fun reminderSettingsDao(): ReminderSettingsDao
+    abstract fun firebaseMappingDao(): FirebaseMappingDao
 
     companion object {
         @Volatile

@@ -70,9 +70,32 @@ abstract class BaseFirebaseRepository {
         data: T
     ): String? {
         return try {
+            android.util.Log.d("BaseFirebaseRepository", "Attempting to add document to ${collectionRef.path}")
+            android.util.Log.d("BaseFirebaseRepository", "Document data: $data")
+            android.util.Log.d("BaseFirebaseRepository", "Current user: ${auth.currentUser?.uid}")
+            android.util.Log.d("BaseFirebaseRepository", "Firebase project ID: ${firestore.app.options.projectId}")
             val docRef = collectionRef.add(data!!).await()
+            android.util.Log.d("BaseFirebaseRepository", "Successfully created document with ID: ${docRef.id}")
             docRef.id
         } catch (e: Exception) {
+            android.util.Log.e("BaseFirebaseRepository", "Failed to add document to ${collectionRef.path}: ${e.message}", e)
+            android.util.Log.e("BaseFirebaseRepository", "Exception type: ${e.javaClass.simpleName}")
+            if (e.cause != null) {
+                android.util.Log.e("BaseFirebaseRepository", "Root cause: ${e.cause?.javaClass?.simpleName}: ${e.cause?.message}")
+            }
+            // Additional debugging for common issues
+            when (e) {
+                is com.google.firebase.firestore.FirebaseFirestoreException -> {
+                    android.util.Log.e("BaseFirebaseRepository", "Firestore error code: ${e.code}")
+                    android.util.Log.e("BaseFirebaseRepository", "Firestore error message: ${e.localizedMessage}")
+                }
+                is com.google.firebase.auth.FirebaseAuthException -> {
+                    android.util.Log.e("BaseFirebaseRepository", "Auth error code: ${e.errorCode}")
+                }
+                is SecurityException -> {
+                    android.util.Log.e("BaseFirebaseRepository", "Security error - check Firestore rules")
+                }
+            }
             null
         }
     }
