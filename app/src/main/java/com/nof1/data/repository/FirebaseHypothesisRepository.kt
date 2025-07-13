@@ -2,6 +2,7 @@ package com.nof1.data.repository
 
 import com.nof1.data.model.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -39,34 +40,66 @@ class FirebaseHypothesisRepository : BaseFirebaseRepository() {
     }
     
     fun getHypothesesByProject(firebaseProjectId: String): Flow<List<FirebaseHypothesis>> {
-        val userId = requireUserId()
-        return getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
-            collection
-                .whereEqualTo("projectId", firebaseProjectId)
-                .whereEqualTo("userId", userId)
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        return flow {
+            try {
+                val userId = requireUserId()
+                android.util.Log.d("FirebaseHypothesisRepository", "Getting hypotheses for project: $firebaseProjectId, user: $userId")
+                getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
+                    collection
+                        .whereEqualTo("projectId", firebaseProjectId)
+                        .whereEqualTo("userId", userId)
+                        // Temporarily removing orderBy to test basic data loading
+                        // .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                }.collect { hypotheses ->
+                    android.util.Log.d("FirebaseHypothesisRepository", "Firebase returned ${hypotheses.size} hypotheses for project $firebaseProjectId")
+                    emit(hypotheses)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseHypothesisRepository", "Error getting hypotheses for project $firebaseProjectId: ${e.message}", e)
+                emit(emptyList<FirebaseHypothesis>())
+            }
         }
     }
     
     fun getActiveHypothesesByProject(firebaseProjectId: String): Flow<List<FirebaseHypothesis>> {
-        val userId = requireUserId()
-        return getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
-            collection
-                .whereEqualTo("projectId", firebaseProjectId)
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        return flow {
+            try {
+                val userId = requireUserId()
+                getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
+                    collection
+                        .whereEqualTo("projectId", firebaseProjectId)
+                        .whereEqualTo("userId", userId)
+                        .whereEqualTo("isArchived", false)
+                        // Temporarily removing orderBy to test basic data loading
+                        // .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                }.collect { hypotheses ->
+                    emit(hypotheses)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseHypothesisRepository", "Error getting active hypotheses: ${e.message}", e)
+                emit(emptyList<FirebaseHypothesis>())
+            }
         }
     }
     
     fun getArchivedHypothesesByProject(firebaseProjectId: String): Flow<List<FirebaseHypothesis>> {
-        val userId = requireUserId()
-        return getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
-            collection
-                .whereEqualTo("projectId", firebaseProjectId)
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", true)
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        return flow {
+            try {
+                val userId = requireUserId()
+                getCollectionAsFlow<FirebaseHypothesis>(hypothesesCollection) { collection ->
+                    collection
+                        .whereEqualTo("projectId", firebaseProjectId)
+                        .whereEqualTo("userId", userId)
+                        .whereEqualTo("isArchived", true)
+                        // Temporarily removing orderBy to test basic data loading
+                        // .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                }.collect { hypotheses ->
+                    emit(hypotheses)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseHypothesisRepository", "Error getting archived hypotheses: ${e.message}", e)
+                emit(emptyList<FirebaseHypothesis>())
+            }
         }
     }
 } 

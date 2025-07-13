@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,12 +50,42 @@ fun ProjectListScreen(
     } else {
         viewModel.projects.collectAsState(initial = emptyList())
     }
+    
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val syncError by viewModel.syncError.collectAsState()
+    
+    // Log project count for debugging
+    LaunchedEffect(projects) {
+        android.util.Log.d("ProjectListScreen", "Projects updated: count=${projects.size}")
+        projects.forEachIndexed { index, project ->
+            android.util.Log.d("ProjectListScreen", "Project $index: ${project.name} (id=${project.id})")
+        }
+    }
+    
+    // Log authentication state for debugging
+    LaunchedEffect(viewModel.isAuthenticated) {
+        android.util.Log.d("ProjectListScreen", "Authentication state: ${viewModel.isAuthenticated}")
+        android.util.Log.d("ProjectListScreen", "Current user ID: ${viewModel.currentUserId}")
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.projects)) },
                 actions = {
+                    // Manual sync button for debugging
+                    IconButton(
+                        onClick = { 
+                            android.util.Log.d("ProjectListScreen", "Manual sync button clicked")
+                            viewModel.syncFromCloud() 
+                        },
+                        enabled = !isSyncing
+                    ) {
+                        Icon(
+                            Icons.Default.Sync,
+                            contentDescription = "Sync from Cloud"
+                        )
+                    }
                     IconButton(onClick = { viewModel.toggleShowArchived() }) {
                         Icon(
                             Icons.Default.Archive,
@@ -78,33 +109,105 @@ fun ProjectListScreen(
             }
         }
     ) { paddingValues ->
-        if (projects.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Show sync status and error messages
+            if (isSyncing) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Text(
-                    text = stringResource(R.string.no_projects),
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Syncing from cloud...",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(projects) { project ->
-                    ProjectCard(
-                        project = project,
-                        onClick = { onNavigateToProject(project.id) },
-                        onArchive = { viewModel.archiveProject(project) },
-                        onDelete = { viewModel.deleteProject(project) }
+            
+            syncError?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text(
+                        text = "Sync Error: $error",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
+                }
+            }
+            
+            // Debug info card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Debug Info:",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "Authenticated: ${viewModel.isAuthenticated}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "User ID: ${viewModel.currentUserId ?: "None"}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "Projects Count: ${projects.size}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            
+            if (projects.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_projects),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Button(
+                            onClick = { 
+                                android.util.Log.d("ProjectListScreen", "Manual sync from empty state")
+                                viewModel.syncFromCloud() 
+                            }
+                        ) {
+                            Text("Try Sync From Cloud")
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(projects) { project ->
+                        ProjectCard(
+                            project = project,
+                            onClick = { onNavigateToProject(project.id) },
+                            onArchive = { viewModel.archiveProject(project) },
+                            onDelete = { viewModel.deleteProject(project) }
+                        )
+                    }
                 }
             }
         }

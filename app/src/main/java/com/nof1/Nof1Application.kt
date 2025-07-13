@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.nof1.data.local.Nof1Database
 import com.nof1.utils.NotificationHelper
 import com.nof1.utils.AuthManager
@@ -36,15 +38,19 @@ class Nof1Application : Application() {
     val hybridHypothesisRepository by lazy {
         HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository, firebaseMappingRepository)
     }
-    val hybridExperimentRepository by lazy {
-        HybridExperimentRepository(database.experimentDao(), firebaseExperimentRepository, firebaseMappingRepository)
-    }
+    // TODO: Create HybridExperimentRepository
+    // val hybridExperimentRepository by lazy {
+    //     HybridExperimentRepository(database.experimentDao(), firebaseExperimentRepository, firebaseMappingRepository)
+    // }
     
     override fun onCreate() {
         super.onCreate()
         
         // Initialize Firebase
         FirebaseApp.initializeApp(this)
+        
+        // Configure Firestore for debug and offline support
+        configureFirestore()
         
         // Initialize WorkManager
         val configuration = Configuration.Builder()
@@ -53,6 +59,22 @@ class Nof1Application : Application() {
         WorkManager.initialize(this, configuration)
         
         NotificationHelper.createNotificationChannel(this)
+    }
+    
+    private fun configureFirestore() {
+        val firestore = FirebaseFirestore.getInstance()
+        
+        // Enable Firestore debug logging for WiFi debugging issues
+        FirebaseFirestore.setLoggingEnabled(true)
+        
+        // Enable offline persistence for reliable data access during network issues
+        val settings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+            .build()
+        firestore.firestoreSettings = settings
+        
+        android.util.Log.d("Nof1Application", "Firebase Firestore configured with offline persistence enabled")
     }
     
     // Legacy Local-only Repositories (for backward compatibility during migration)

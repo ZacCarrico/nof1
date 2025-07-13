@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Updated ViewModel for managing Project data with Firebase integration.
@@ -53,9 +54,21 @@ class HybridProjectViewModel(
     val currentUserId = authManager.currentUserId
     
     init {
-        // Auto-sync when ViewModel is created (if authenticated)
-        if (authManager.isAuthenticated) {
-            syncFromCloud()
+        // Listen to authentication state changes and sync accordingly
+        viewModelScope.launch {
+            authManager.authStateFlow().collectLatest { user ->
+                android.util.Log.d("HybridProjectViewModel", "Auth state changed: user=${user?.uid ?: "null"}")
+                if (user != null) {
+                    // User authenticated, start syncing
+                    android.util.Log.d("HybridProjectViewModel", "User authenticated, starting sync from cloud")
+                    syncFromCloud()
+                } else {
+                    // User signed out, clear sync state
+                    android.util.Log.d("HybridProjectViewModel", "User signed out, clearing sync state")
+                    _isSyncing.value = false
+                    _syncError.value = null
+                }
+            }
         }
     }
     

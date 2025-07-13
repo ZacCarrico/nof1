@@ -28,8 +28,8 @@ import com.nof1.ui.components.HypothesisCard
 import com.nof1.ui.components.ReminderSettingsCard
 import com.nof1.ui.components.ReminderDialog
 import com.nof1.utils.SecureStorage
-import com.nof1.viewmodel.HybridHypothesisViewModel
-import com.nof1.viewmodel.HybridHypothesisViewModelFactory
+import com.nof1.viewmodel.HypothesisViewModel
+import com.nof1.viewmodel.HypothesisViewModelFactory
 import com.nof1.viewmodel.ReminderViewModel
 import com.nof1.viewmodel.ReminderViewModelFactory
 
@@ -57,8 +57,8 @@ fun ProjectDetailScreen(
         } else null
     }
     
-    val hypothesisViewModel: HybridHypothesisViewModel = viewModel(
-        factory = HybridHypothesisViewModelFactory(hypothesisRepository, projectId, application.authManager)
+    val hypothesisViewModel: HypothesisViewModel = viewModel(
+        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
     )
     
     val reminderViewModel: ReminderViewModel = viewModel(
@@ -68,7 +68,7 @@ fun ProjectDetailScreen(
     val project by projectRepository.getProjectWithHypotheses(projectId)
         .collectAsState(initial = null)
     
-    val hypotheses by hypothesisViewModel.hypotheses.collectAsState(initial = emptyList())
+    val hypotheses by application.hybridHypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
     
     val projectReminders by reminderViewModel.getReminderSettingsForEntity(
         ReminderEntityType.PROJECT, projectId

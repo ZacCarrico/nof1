@@ -4,7 +4,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.channels.awaitClose
 
 /**
  * Authentication manager for Firebase Auth operations.
@@ -35,12 +37,24 @@ class AuthManager {
     /**
      * Listen to authentication state changes
      */
-    fun authStateFlow(): Flow<FirebaseUser?> = flow {
-        val listener = FirebaseAuth.AuthStateListener { auth ->
-            // Note: This is a simplified flow - in production you'd want to use callbackFlow
+    fun authStateFlow(): Flow<FirebaseUser?> = callbackFlow {
+        android.util.Log.d("AuthManager", "Setting up authentication state listener")
+        
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            android.util.Log.d("AuthManager", "Auth state changed: user=${user?.uid ?: "null"}")
+            trySend(user).isSuccess
         }
+        
         auth.addAuthStateListener(listener)
-        emit(currentUser)
+        
+        // Emit current state immediately
+        trySend(currentUser).isSuccess
+        
+        awaitClose {
+            android.util.Log.d("AuthManager", "Removing authentication state listener")
+            auth.removeAuthStateListener(listener)
+        }
     }
     
     /**

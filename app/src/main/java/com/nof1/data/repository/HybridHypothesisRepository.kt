@@ -5,6 +5,7 @@ import com.nof1.data.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 
 /**
@@ -147,10 +148,20 @@ class HybridHypothesisRepository(
     }
     
     /**
-     * Get active hypotheses by project
+     * Get active hypotheses by project - combines local and cloud data
      */
     fun getActiveHypothesesForProject(projectId: Long): Flow<List<Hypothesis>> {
-        return localRepository.getActiveHypothesesForProject(projectId)
+        android.util.Log.d("HybridHypothesisRepository", "getActiveHypothesesForProject($projectId) called")
+        return combine(
+            localRepository.getActiveHypothesesForProject(projectId),
+            getCloudHypothesesForProject(projectId)
+        ) { localHypotheses, cloudHypotheses ->
+            android.util.Log.d("HybridHypothesisRepository", "Combining hypotheses: local=${localHypotheses.size}, cloud=${cloudHypotheses.size}")
+            // Merge and deduplicate hypotheses
+            val merged = mergeHypotheses(localHypotheses, cloudHypotheses).filter { !it.isArchived }
+            android.util.Log.d("HybridHypothesisRepository", "Active hypotheses result: ${merged.size}")
+            merged
+        }
     }
     
     /**
@@ -193,6 +204,51 @@ class HybridHypothesisRepository(
     }
     
     // Helper functions
+    
+    private fun getCloudHypothesesForProject(projectId: Long): Flow<List<Hypothesis>> = flow {
+        try {
+            // Get Firebase project ID from local project ID
+            val firebaseProjectId = mappingRepository.getFirebaseId(
+                FirebaseMappingRepository.ENTITY_TYPE_PROJECT,
+                projectId
+            )
+            
+            if (firebaseProjectId != null) {
+                android.util.Log.d("HybridHypothesisRepository", "Getting cloud hypotheses for project: $firebaseProjectId")
+                firebaseHypothesisRepository.getActiveHypothesesByProject(firebaseProjectId).collect { firebaseHypotheses ->
+                    android.util.Log.d("HybridHypothesisRepository", "Firebase returned ${firebaseHypotheses.size} hypotheses")
+                    val localHypotheses = firebaseHypotheses.map { it.toHypothesis(projectId) }
+                    emit(localHypotheses)
+                }
+            } else {
+                android.util.Log.d("HybridHypothesisRepository", "No Firebase project ID found for local project $projectId")
+                emit(emptyList<Hypothesis>())
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("HybridHypothesisRepository", "Error getting cloud hypotheses: ${e.message}", e)
+            emit(emptyList<Hypothesis>())
+        }
+    }
+    
+    private fun mergeHypotheses(localHypotheses: List<Hypothesis>, cloudHypotheses: List<Hypothesis>): List<Hypothesis> {
+        // Simple merge strategy - prefer local data, add cloud-only items
+        val mergedMap = mutableMapOf<String, Hypothesis>()
+        
+        // Add local hypotheses first
+        localHypotheses.forEach { hypothesis ->
+            mergedMap[hypothesis.name] = hypothesis // Use name as key for simplicity
+        }
+        
+        // Add cloud hypotheses that don't exist locally
+        cloudHypotheses.forEach { cloudHypothesis ->
+            if (!mergedMap.containsKey(cloudHypothesis.name)) {
+                mergedMap[cloudHypothesis.name] = cloudHypothesis
+            }
+        }
+        
+        return mergedMap.values.sortedByDescending { it.createdAt }
+    }
+    
     private suspend fun getHypothesisByFirebaseId(firebaseId: String): Hypothesis? {
         val localId = mappingRepository.getLocalId(
             FirebaseMappingRepository.ENTITY_TYPE_HYPOTHESIS,

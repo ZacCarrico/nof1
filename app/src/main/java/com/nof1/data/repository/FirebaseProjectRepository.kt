@@ -41,12 +41,24 @@ class FirebaseProjectRepository : BaseFirebaseRepository() {
     }
     
     fun getActiveProjects(): Flow<List<FirebaseProject>> {
-        val userId = requireUserId()
-        return getCollectionAsFlow<FirebaseProject>(projectsCollection) { collection ->
-            collection
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        return flow {
+            try {
+                val userId = requireUserId()
+                android.util.Log.d("FirebaseProjectRepository", "Getting active projects for user: $userId")
+                getCollectionAsFlow<FirebaseProject>(projectsCollection) { collection ->
+                    collection
+                        .whereEqualTo("userId", userId)
+                        .whereEqualTo("isArchived", false)
+                        // Temporarily removing orderBy to test basic data loading
+                        // .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                }.collect { projects ->
+                    android.util.Log.d("FirebaseProjectRepository", "Firebase returned ${projects.size} active projects")
+                    emit(projects)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseProjectRepository", "Error getting active projects: ${e.message}", e)
+                emit(emptyList<FirebaseProject>())
+            }
         }
     }
     
@@ -61,11 +73,23 @@ class FirebaseProjectRepository : BaseFirebaseRepository() {
     }
     
     fun getAllProjects(): Flow<List<FirebaseProject>> {
-        val userId = requireUserId()
-        return getCollectionAsFlow<FirebaseProject>(projectsCollection) { collection ->
-            collection
-                .whereEqualTo("userId", userId)
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+        return flow {
+            try {
+                val userId = requireUserId()
+                android.util.Log.d("FirebaseProjectRepository", "Getting all projects for user: $userId")
+                getCollectionAsFlow<FirebaseProject>(projectsCollection) { collection ->
+                    collection
+                        .whereEqualTo("userId", userId)
+                        // Temporarily removing orderBy to test basic data loading
+                        // .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                }.collect { projects ->
+                    android.util.Log.d("FirebaseProjectRepository", "Firebase returned ${projects.size} total projects")
+                    emit(projects)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseProjectRepository", "Error getting all projects: ${e.message}", e)
+                emit(emptyList<FirebaseProject>())
+            }
         }
     }
     

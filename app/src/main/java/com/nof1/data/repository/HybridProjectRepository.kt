@@ -5,6 +5,7 @@ import com.nof1.data.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 
 /**
@@ -124,12 +125,16 @@ class HybridProjectRepository(
      * Get active projects - combines local and cloud data
      */
     fun getActiveProjects(): Flow<List<Project>> {
+        android.util.Log.d("HybridProjectRepository", "getActiveProjects() called")
         return combine(
             localRepository.getActiveProjects(),
             getCloudProjects()
         ) { localProjects, cloudProjects ->
+            android.util.Log.d("HybridProjectRepository", "Combining data: local=${localProjects.size}, cloud=${cloudProjects.size}")
             // Merge and deduplicate projects
-            mergeProjects(localProjects, cloudProjects).filter { !it.isArchived }
+            val merged = mergeProjects(localProjects, cloudProjects).filter { !it.isArchived }
+            android.util.Log.d("HybridProjectRepository", "Active projects result: ${merged.size}")
+            merged
         }
     }
     
@@ -176,24 +181,30 @@ class HybridProjectRepository(
      */
     suspend fun syncFromCloud() {
         try {
-            firebaseProjectRepository.getAllProjects().collect { firebaseProjects ->
-                // Convert Firebase projects to Room projects and save locally
-                firebaseProjects.forEach { firebaseProject ->
-                    val localProject = firebaseProject.toProject()
-                    // Check if project already exists locally
-                    val existingProject = getProjectByFirebaseId(firebaseProject.id)
-                    if (existingProject == null) {
-                        localRepository.insertProject(localProject)
-                    } else {
-                        // Update existing project if cloud version is newer
-                        if (isCloudVersionNewer(firebaseProject, existingProject)) {
-                            localRepository.updateProject(localProject.copy(id = existingProject.id))
-                        }
+            android.util.Log.d("HybridProjectRepository", "Starting sync from cloud")
+            // Use first() to get one-time snapshot instead of continuous listening
+            val firebaseProjects = firebaseProjectRepository.getAllProjects().first()
+            android.util.Log.d("HybridProjectRepository", "Syncing ${firebaseProjects.size} projects from cloud")
+            
+            // Convert Firebase projects to Room projects and save locally
+            firebaseProjects.forEach { firebaseProject ->
+                val localProject = firebaseProject.toProject()
+                // Check if project already exists locally
+                val existingProject = getProjectByFirebaseId(firebaseProject.id)
+                if (existingProject == null) {
+                    android.util.Log.d("HybridProjectRepository", "Inserting new project from cloud: ${localProject.name}")
+                    localRepository.insertProject(localProject)
+                } else {
+                    // Update existing project if cloud version is newer
+                    if (isCloudVersionNewer(firebaseProject, existingProject)) {
+                        android.util.Log.d("HybridProjectRepository", "Updating existing project from cloud: ${localProject.name}")
+                        localRepository.updateProject(localProject.copy(id = existingProject.id))
                     }
                 }
             }
+            android.util.Log.d("HybridProjectRepository", "Cloud sync completed successfully")
         } catch (e: Exception) {
-            // Sync failed, will retry later
+            android.util.Log.e("HybridProjectRepository", "Cloud sync failed: ${e.message}", e)
         }
     }
     
@@ -223,10 +234,14 @@ class HybridProjectRepository(
     
     private fun getCloudProjects(): Flow<List<Project>> = flow {
         try {
+            android.util.Log.d("HybridProjectRepository", "Starting cloud projects collection")
             firebaseProjectRepository.getAllProjects().collect { firebaseProjects ->
-                emit(firebaseProjects.map { it.toProject() })
+                android.util.Log.d("HybridProjectRepository", "Received ${firebaseProjects.size} projects from Firebase")
+                val localProjects = firebaseProjects.map { it.toProject() }
+                emit(localProjects)
             }
         } catch (e: Exception) {
+            android.util.Log.e("HybridProjectRepository", "Error getting cloud projects: ${e.message}", e)
             emit(emptyList())
         }
     }

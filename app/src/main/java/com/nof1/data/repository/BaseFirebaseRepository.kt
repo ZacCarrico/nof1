@@ -6,7 +6,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.channels.awaitClose
 
 /**
  * Base Firebase repository providing common Firestore operations.
@@ -30,20 +32,43 @@ abstract class BaseFirebaseRepository {
     }
     
     /**
-     * Generic function to get documents from a collection as Flow
+     * Generic function to get documents from a collection as Flow with real-time updates
      */
     protected inline fun <reified T> getCollectionAsFlow(
         collectionRef: CollectionReference,
         crossinline query: (CollectionReference) -> Query = { it }
-    ): Flow<List<T>> = flow {
-        try {
-            val snapshot = query(collectionRef).get().await()
-            val items = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(T::class.java)
+    ): Flow<List<T>> = callbackFlow {
+        android.util.Log.d("BaseFirebaseRepository", "Setting up real-time listener for ${collectionRef.path}")
+        
+        val listener = query(collectionRef).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("BaseFirebaseRepository", "Error in real-time listener for ${collectionRef.path}: ${error.message}", error)
+                // Don't close the flow on error, Firebase will retry
+                return@addSnapshotListener
             }
-            emit(items)
-        } catch (e: Exception) {
-            emit(emptyList())
+            
+            if (snapshot != null) {
+                android.util.Log.d("BaseFirebaseRepository", "Received ${snapshot.documents.size} documents from ${collectionRef.path}")
+                val items = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(T::class.java)?.also {
+                            android.util.Log.v("BaseFirebaseRepository", "Successfully parsed document ${doc.id}")
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("BaseFirebaseRepository", "Failed to parse document ${doc.id}: ${e.message}")
+                        null
+                    }
+                }
+                trySend(items).isSuccess
+            } else {
+                android.util.Log.w("BaseFirebaseRepository", "Received null snapshot for ${collectionRef.path}")
+                trySend(emptyList()).isSuccess
+            }
+        }
+        
+        awaitClose {
+            android.util.Log.d("BaseFirebaseRepository", "Removing real-time listener for ${collectionRef.path}")
+            listener.remove()
         }
     }
     

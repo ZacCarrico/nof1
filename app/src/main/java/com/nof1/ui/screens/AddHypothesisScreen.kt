@@ -21,8 +21,8 @@ import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.Project
 import com.nof1.data.repository.HypothesisGenerationRepository
 import com.nof1.utils.SecureStorage
-import com.nof1.viewmodel.HybridHypothesisViewModel
-import com.nof1.viewmodel.HybridHypothesisViewModelFactory
+import com.nof1.viewmodel.HypothesisViewModel
+import com.nof1.viewmodel.HypothesisViewModelFactory
 
 /**
  * Screen for adding a new hypothesis.
@@ -45,8 +45,8 @@ fun AddHypothesisScreen(
         } else null
     }
     
-    val viewModel: HybridHypothesisViewModel = viewModel(
-        factory = HybridHypothesisViewModelFactory(repository, projectId, application.authManager)
+    val viewModel: HypothesisViewModel = viewModel(
+        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
     )
     
     var project by remember { mutableStateOf<Project?>(null) }
