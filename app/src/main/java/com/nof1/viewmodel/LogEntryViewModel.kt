@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.nof1.data.model.LogEntry
 import com.nof1.data.repository.ExperimentRepository
 import com.nof1.data.repository.LogEntryRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing LogEntry data and UI state.
+ * Updated to work with Firebase-only repositories.
  */
 class LogEntryViewModel(
     private val logEntryRepository: LogEntryRepository,
@@ -34,6 +36,18 @@ class LogEntryViewModel(
         viewModelScope.launch {
             logEntryRepository.deleteLogEntry(logEntry)
         }
+    }
+    
+    fun getLogEntriesForExperiment(experimentId: String): Flow<List<LogEntry>> {
+        return logEntryRepository.getLogEntriesForExperiment(experimentId)
+    }
+    
+    fun getLogEntriesForHypothesis(hypothesisId: String): Flow<List<LogEntry>> {
+        return logEntryRepository.getLogEntriesForHypothesis(hypothesisId)
+    }
+    
+    fun getLogEntriesForProject(projectId: String): Flow<List<LogEntry>> {
+        return logEntryRepository.getLogEntriesForProject(projectId)
     }
 }
 

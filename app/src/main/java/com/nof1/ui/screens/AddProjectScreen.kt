@@ -19,8 +19,8 @@ import com.nof1.R
 import com.nof1.data.model.Project
 import com.nof1.data.repository.HypothesisGenerationRepository
 import com.nof1.utils.SecureStorage
-import com.nof1.viewmodel.HybridProjectViewModel
-import com.nof1.viewmodel.HybridProjectViewModelFactory
+import com.nof1.viewmodel.ProjectViewModel
+import com.nof1.viewmodel.ProjectViewModelFactory
 
 /**
  * Screen for adding a new project.
@@ -41,11 +41,10 @@ fun AddProjectScreen(
         } else null
     }
     
-    val viewModel: HybridProjectViewModel = viewModel(
-        factory = HybridProjectViewModelFactory(
-            application.hybridProjectRepository,
-            generationRepository,
-            application.authManager
+    val viewModel: ProjectViewModel = viewModel(
+        factory = ProjectViewModelFactory(
+            application.projectRepository,
+            generationRepository
         )
     )
     

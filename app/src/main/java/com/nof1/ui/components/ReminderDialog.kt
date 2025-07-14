@@ -1,19 +1,16 @@
 package com.nof1.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.nof1.data.model.ReminderSettings
@@ -21,9 +18,10 @@ import com.nof1.data.model.ReminderFrequency
 import com.nof1.data.model.ReminderEntityType
 import com.nof1.data.model.DayOfWeek
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 /**
- * Dialog for creating or editing reminder settings.
+ * Dialog for creating/editing reminder settings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,16 +29,17 @@ fun ReminderDialog(
     isEdit: Boolean = false,
     initialReminder: ReminderSettings? = null,
     entityType: ReminderEntityType,
-    entityId: Long,
+    entityId: String,
+    projectId: String,
     onDismiss: () -> Unit,
     onSave: (ReminderSettings) -> Unit
 ) {
     var title by remember { mutableStateOf(initialReminder?.title ?: "") }
     var description by remember { mutableStateOf(initialReminder?.description ?: "") }
-    var selectedFrequency by remember { mutableStateOf(initialReminder?.frequency ?: ReminderFrequency.DAILY) }
-    var selectedTime by remember { mutableStateOf(initialReminder?.time ?: LocalTime.of(9, 0)) }
+    var selectedFrequency by remember { mutableStateOf(initialReminder?.frequency ?: "DAILY") }
+    var selectedTime by remember { mutableStateOf(initialReminder?.getNotificationTime() ?: LocalTime.of(9, 0)) }
     var customDays by remember { mutableStateOf(initialReminder?.customFrequencyDays?.toString() ?: "1") }
-    var selectedDaysOfWeek by remember { mutableStateOf(initialReminder?.daysOfWeek ?: emptySet()) }
+    var selectedDaysOfWeek by remember { mutableStateOf(initialReminder?.getDaysOfWeekSet() ?: emptySet()) }
     var isEnabled by remember { mutableStateOf(initialReminder?.isEnabled ?: true) }
     
     var showTimePicker by remember { mutableStateOf(false) }
@@ -55,8 +54,7 @@ fun ReminderDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
                 Text(
                     text = if (isEdit) "Edit Reminder" else "Add Reminder",
@@ -65,32 +63,32 @@ fun ReminderDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                // Title field
+                // Title
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Title") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    singleLine = true
+                        .padding(bottom = 8.dp)
                 )
                 
-                // Description field
+                // Description
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description (optional)") },
+                    maxLines = 3,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    maxLines = 3
+                        .padding(bottom = 16.dp)
                 )
                 
                 // Frequency selection
                 Text(
                     text = "Frequency",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
@@ -99,48 +97,57 @@ fun ReminderDialog(
                         .selectableGroup()
                         .padding(bottom = 16.dp)
                 ) {
-                    ReminderFrequency.values().forEach { frequency ->
+                    val frequencies = listOf(
+                        "ONCE" to "Once",
+                        "DAILY" to "Daily",
+                        "WEEKLY" to "Weekly",
+                        "MONTHLY" to "Monthly",
+                        "CUSTOM" to "Custom"
+                    )
+                    
+                    frequencies.forEach { (value, label) ->
                         Row(
-                            modifier = Modifier
+                            Modifier
                                 .fillMaxWidth()
                                 .selectable(
-                                    selected = selectedFrequency == frequency,
-                                    onClick = { selectedFrequency = frequency },
+                                    selected = selectedFrequency == value,
+                                    onClick = { selectedFrequency = value },
                                     role = Role.RadioButton
                                 )
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = selectedFrequency == frequency,
+                                selected = selectedFrequency == value,
                                 onClick = null
                             )
                             Text(
-                                text = frequency.name.lowercase().replaceFirstChar { it.uppercase() },
+                                text = label,
+                                style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
                     }
                 }
                 
-                // Custom frequency days input
-                if (selectedFrequency == ReminderFrequency.CUSTOM) {
+                // Custom frequency input
+                if (selectedFrequency == "CUSTOM") {
                     OutlinedTextField(
                         value = customDays,
-                        onValueChange = { customDays = it.filter { char -> char.isDigit() } },
-                        label = { Text("Days") },
+                        onValueChange = { customDays = it },
+                        label = { Text("Every X days") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        singleLine = true
+                            .padding(bottom = 16.dp)
                     )
                 }
                 
                 // Days of week selection for weekly frequency
-                if (selectedFrequency == ReminderFrequency.WEEKLY) {
+                if (selectedFrequency == "WEEKLY") {
                     Text(
-                        text = "Days of Week",
-                        style = MaterialTheme.typography.labelLarge,
+                        text = "Select Days",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     
@@ -168,41 +175,45 @@ fun ReminderDialog(
                 }
                 
                 // Time selection
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Time: ${selectedTime.hour.toString().padStart(2, '0')}:${selectedTime.minute.toString().padStart(2, '0')}",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    
-                    TextButton(onClick = { showTimePicker = true }) {
-                        Text("Change")
-                    }
-                }
+                Text(
+                    text = "Time",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    onValueChange = { },
+                    label = { Text("Notification Time") },
+                    trailingIcon = {
+                        IconButton(onClick = { showTimePicker = true }) {
+                            Icon(Icons.Default.Schedule, contentDescription = "Select Time")
+                        }
+                    },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                )
                 
-                // Enable/disable toggle
+                // Enabled toggle
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "Enabled",
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                    
                     Switch(
                         checked = isEnabled,
                         onCheckedChange = { isEnabled = it }
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(24.dp))
                 
                 // Action buttons
                 Row(
@@ -218,20 +229,22 @@ fun ReminderDialog(
                     Button(
                         onClick = {
                             val reminder = ReminderSettings(
-                                id = initialReminder?.id ?: 0,
-                                entityType = entityType,
+                                id = initialReminder?.id ?: "",
+                                entityType = entityType.name,
                                 entityId = entityId,
+                                projectId = projectId,
                                 isEnabled = isEnabled,
                                 title = title,
                                 description = description,
                                 frequency = selectedFrequency,
-                                time = selectedTime,
-                                customFrequencyDays = if (selectedFrequency == ReminderFrequency.CUSTOM) {
+                                timeHour = selectedTime.hour,
+                                timeMinute = selectedTime.minute,
+                                customFrequencyDays = if (selectedFrequency == "CUSTOM") {
                                     customDays.toIntOrNull()
                                 } else null,
-                                daysOfWeek = if (selectedFrequency == ReminderFrequency.WEEKLY) {
-                                    selectedDaysOfWeek
-                                } else emptySet()
+                                daysOfWeek = if (selectedFrequency == "WEEKLY") {
+                                    selectedDaysOfWeek.map { it.name }
+                                } else emptyList()
                             )
                             onSave(reminder)
                         },
@@ -244,6 +257,7 @@ fun ReminderDialog(
         }
     }
     
+    // Time picker dialog
     if (showTimePicker) {
         TimePickerDialog(
             initialTime = selectedTime,
@@ -256,26 +270,38 @@ fun ReminderDialog(
     }
 }
 
+/**
+ * Simple time picker dialog.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimePickerDialog(
+fun TimePickerDialog(
     initialTime: LocalTime,
     onTimeSelected: (LocalTime) -> Unit,
     onDismiss: () -> Unit
 ) {
     var hourText by remember { mutableStateOf(initialTime.hour.toString().padStart(2, '0')) }
     var minuteText by remember { mutableStateOf(initialTime.minute.toString().padStart(2, '0')) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Select Time") },
-        text = {
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.padding(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
             Column(
+                modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Text(
+                    text = "Select Time",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(bottom = 16.dp)
                 ) {
                     // Hour selector
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -289,11 +315,8 @@ private fun TimePickerDialog(
                                 }
                             },
                             modifier = Modifier.width(80.dp),
-                            textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number
-                            )
+                            textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
+                            singleLine = true
                         )
                     }
                     
@@ -311,31 +334,34 @@ private fun TimePickerDialog(
                                 }
                             },
                             modifier = Modifier.width(80.dp),
-                            textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Number
-                            )
+                            textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center),
+                            singleLine = true
                         )
                     }
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val hour = hourText.toIntOrNull()?.coerceIn(0, 23) ?: 0
-                    val minute = minuteText.toIntOrNull()?.coerceIn(0, 59) ?: 0
-                    onTimeSelected(LocalTime.of(hour, minute))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = {
+                            val hour = hourText.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                            val minute = minuteText.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                            val selectedTime = LocalTime.of(hour, minute)
+                            onTimeSelected(selectedTime)
+                        }
+                    ) {
+                        Text("OK")
+                    }
                 }
-            ) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
             }
         }
-    )
+    }
 }

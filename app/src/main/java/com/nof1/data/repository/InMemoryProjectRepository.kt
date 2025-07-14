@@ -4,17 +4,22 @@ import com.nof1.data.model.Project
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import java.time.LocalDateTime
+import com.google.firebase.Timestamp
+import java.util.UUID
 
 /**
  * Temporary in-memory repository for projects to avoid Room database issues.
  */
 class InMemoryProjectRepository {
     private val projects = MutableStateFlow<List<Project>>(emptyList())
-    private var nextId = 1L
 
-    suspend fun insertProject(project: Project): Long {
-        val newProject = project.copy(id = nextId++)
+    suspend fun insertProject(project: Project): String {
+        val newId = UUID.randomUUID().toString()
+        val newProject = project.copy(
+            id = newId,
+            createdAt = Timestamp.now(),
+            updatedAt = Timestamp.now()
+        )
         val currentProjects = projects.value.toMutableList()
         currentProjects.add(newProject)
         projects.value = currentProjects
@@ -22,7 +27,7 @@ class InMemoryProjectRepository {
     }
 
     suspend fun updateProject(project: Project) {
-        val updatedProject = project.copy(updatedAt = LocalDateTime.now())
+        val updatedProject = project.copy(updatedAt = Timestamp.now())
         val currentProjects = projects.value.toMutableList()
         val index = currentProjects.indexOfFirst { it.id == project.id }
         if (index != -1) {
@@ -40,12 +45,12 @@ class InMemoryProjectRepository {
     suspend fun archiveProject(project: Project) {
         val archivedProject = project.copy(
             isArchived = true,
-            updatedAt = LocalDateTime.now()
+            updatedAt = Timestamp.now()
         )
         updateProject(archivedProject)
     }
 
-    suspend fun getProjectById(id: Long): Project? {
+    suspend fun getProjectById(id: String): Project? {
         return projects.value.find { it.id == id }
     }
 

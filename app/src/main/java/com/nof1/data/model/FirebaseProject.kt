@@ -3,10 +3,12 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
- * Firebase-compatible version of Project for Firestore storage.
- * Uses Firestore-specific annotations and types.
+ * Primary Project model for Firebase Firestore storage.
+ * This replaces the Room Project entity.
  */
 data class FirebaseProject(
     @DocumentId
@@ -27,36 +29,27 @@ data class FirebaseProject(
     constructor() : this("", "", "", false, "", null, null)
     
     /**
-     * Convert to Room Project for local storage/offline support
+     * Get createdAt as LocalDateTime for UI display
      */
-    fun toProject(): Project {
-        return Project(
-            id = 0, // Room will auto-generate
-            name = name,
-            goal = goal,
-            isArchived = isArchived,
-            createdAt = createdAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now(),
-            updatedAt = updatedAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now()
-        )
+    fun getCreatedAtAsLocalDateTime(): LocalDateTime {
+        return createdAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
     }
-}
-
-/**
- * Extension function to convert Room Project to Firebase Project
- */
-fun Project.toFirebaseProject(userId: String, firebaseId: String = ""): FirebaseProject {
-    return FirebaseProject(
-        id = firebaseId,
-        name = name,
-        goal = goal,
-        isArchived = isArchived,
-        userId = userId,
-        // Let Firebase set these automatically with @ServerTimestamp
-        createdAt = null,
-        updatedAt = null
-    )
+    
+    /**
+     * Get updatedAt as LocalDateTime for UI display
+     */
+    fun getUpdatedAtAsLocalDateTime(): LocalDateTime {
+        return updatedAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
+    }
+    
+    /**
+     * Create a copy with updated timestamp
+     */
+    fun copyWithUpdatedTimestamp(): FirebaseProject {
+        return this.copy(updatedAt = null) // Firebase will set this with @ServerTimestamp
+    }
 } 

@@ -172,25 +172,26 @@ private fun ReminderItem(
 @Composable
 private fun formatReminderSchedule(reminder: ReminderSettings): String {
     val timeFormatter = DateTimeFormatter.ofPattern("h:mm a")
-    val timeString = reminder.time.format(timeFormatter)
+    val timeString = reminder.getNotificationTime().format(timeFormatter)
     
     return when (reminder.frequency) {
-        ReminderFrequency.ONCE -> "Once at $timeString"
-        ReminderFrequency.DAILY -> "Daily at $timeString"
-        ReminderFrequency.WEEKLY -> {
+        "ONCE" -> "Once at $timeString"
+        "DAILY" -> "Daily at $timeString"
+        "WEEKLY" -> {
             if (reminder.daysOfWeek.isEmpty()) {
                 "Weekly at $timeString"
             } else {
-                val days = reminder.daysOfWeek.joinToString(", ") { 
-                    it.name.lowercase().replaceFirstChar { char -> char.uppercase() }
+                val days = reminder.daysOfWeek.joinToString(", ") { dayName ->
+                    dayName.lowercase().replaceFirstChar { char -> char.uppercase() }
                 }
                 "$days at $timeString"
             }
         }
-        ReminderFrequency.MONTHLY -> "Monthly at $timeString"
-        ReminderFrequency.CUSTOM -> {
+        "MONTHLY" -> "Monthly at $timeString"
+        "CUSTOM" -> {
             val days = reminder.customFrequencyDays ?: 1
             "Every $days day${if (days != 1) "s" else ""} at $timeString"
         }
+        else -> "Unknown frequency at $timeString"
     }
 }

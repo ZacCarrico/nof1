@@ -29,7 +29,7 @@ object NotificationScheduler {
             )
     }
     
-    fun cancelExperimentNotification(context: Context, experimentId: Long) {
+    fun cancelExperimentNotification(context: Context, experimentId: String) {
         WorkManager.getInstance(context)
             .cancelUniqueWork("experiment_$experimentId")
     }
@@ -42,19 +42,20 @@ object NotificationScheduler {
     
     private fun createWorkRequest(experiment: Experiment): PeriodicWorkRequest {
         val data = Data.Builder()
-            .putLong("experiment_id", experiment.id)
+            .putString("experiment_id", experiment.id)
             .build()
         
         val repeatInterval = when (experiment.notificationFrequency) {
-            NotificationFrequency.DAILY -> 1L to TimeUnit.DAYS
-            NotificationFrequency.WEEKLY -> 7L to TimeUnit.DAYS
-            NotificationFrequency.CUSTOM -> {
+            "DAILY" -> 1L to TimeUnit.DAYS
+            "WEEKLY" -> 7L to TimeUnit.DAYS
+            "CUSTOM" -> {
                 val days = experiment.customFrequencyDays ?: 1
                 days.toLong() to TimeUnit.DAYS
             }
+            else -> 1L to TimeUnit.DAYS
         }
         
-        val initialDelay = calculateInitialDelay(experiment.notificationTime)
+        val initialDelay = calculateInitialDelay(experiment.getNotificationTime())
         
         return PeriodicWorkRequestBuilder<ExperimentNotificationWorker>(
             repeatInterval.first,

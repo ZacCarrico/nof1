@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing Note data and UI state.
+ * Updated to work with Firebase-only repositories.
  */
 class NoteViewModel(
     private val repository: NoteRepository
@@ -38,8 +39,12 @@ class NoteViewModel(
         }
     }
     
-    fun getNotesForHypothesis(hypothesisId: Long): Flow<List<Note>> {
+    fun getNotesForHypothesis(hypothesisId: String): Flow<List<Note>> {
         return repository.getNotesForHypothesis(hypothesisId)
+    }
+    
+    fun getNotesForProject(projectId: String): Flow<List<Note>> {
+        return repository.getNotesForProject(projectId)
     }
 }
 

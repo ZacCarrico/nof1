@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing Project data and UI state.
+ * Updated to work with Firebase-only repositories.
  */
 class ProjectViewModel(
     private val repository: ProjectRepository,
@@ -49,26 +50,34 @@ class ProjectViewModel(
     
     fun insertProject(project: Project) {
         viewModelScope.launch {
-            val projectId = repository.insertProject(project)
-            val savedProject = project.copy(id = projectId)
-            _savedProject = savedProject
-            
-            // Generate hypotheses but don't auto-save them
-            generationRepository?.let { genRepo ->
-                _isGeneratingHypotheses.value = true
-                _generationError.value = null
-                _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}\""
-                
-                genRepo.generateHypotheses(savedProject)
-                    .onSuccess { hypotheses ->
-                        // Hypotheses generated but not saved yet
-                        _generatedHypotheses.value = hypotheses
-                        _isGeneratingHypotheses.value = false
+            try {
+                val projectId = repository.insertProject(project)
+                if (projectId != null) {
+                    val savedProject = project.copy(id = projectId)
+                    _savedProject = savedProject
+                    
+                    // Generate hypotheses but don't auto-save them
+                    generationRepository?.let { genRepo ->
+                        _isGeneratingHypotheses.value = true
+                        _generationError.value = null
+                        _apiCallDescription.value = "Calling OpenAI API with prompt: \"Generate hypotheses for achieving ${savedProject.goal}\""
+                        
+                        genRepo.generateHypotheses(savedProject)
+                            .onSuccess { hypotheses ->
+                                // Hypotheses generated but not saved yet
+                                _generatedHypotheses.value = hypotheses
+                                _isGeneratingHypotheses.value = false
+                            }
+                            .onFailure { error ->
+                                _generationError.value = error.message ?: "Failed to generate hypotheses"
+                                _isGeneratingHypotheses.value = false
+                            }
                     }
-                    .onFailure { error ->
-                        _generationError.value = error.message ?: "Failed to generate hypotheses"
-                        _isGeneratingHypotheses.value = false
-                    }
+                } else {
+                    _generationError.value = "Failed to save project"
+                }
+            } catch (e: Exception) {
+                _generationError.value = "Failed to save project: ${e.message}"
             }
         }
     }
@@ -112,6 +121,11 @@ class ProjectViewModel(
             repository.archiveProject(project)
         }
     }
+    
+    fun getProjectById(projectId: String) = repository.getProjectWithHypotheses(projectId)
+    
+    fun getProjectWithHypothesesAndExperiments(projectId: String) = 
+        repository.getProjectWithHypothesesAndExperiments(projectId)
 }
 
 class ProjectViewModelFactory(

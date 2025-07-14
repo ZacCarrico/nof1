@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.nof1.data.model.ReminderEntityType
 import com.nof1.data.model.ReminderSettings
 import com.nof1.data.repository.ReminderRepository
 import com.nof1.utils.ReminderScheduler
@@ -13,21 +12,28 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing reminder settings.
+ * Updated to work with Firebase-only repositories.
  */
 class ReminderViewModel(
     private val reminderRepository: ReminderRepository,
     private val context: Context
 ) : ViewModel() {
     
-    fun getReminderSettingsForEntity(entityType: ReminderEntityType, entityId: Long): Flow<List<ReminderSettings>> {
+    fun getReminderSettingsForEntity(entityType: String, entityId: String): Flow<List<ReminderSettings>> {
         return reminderRepository.getReminderSettingsForEntity(entityType, entityId)
+    }
+    
+    fun getRemindersForProject(projectId: String): Flow<List<ReminderSettings>> {
+        return reminderRepository.getRemindersForProject(projectId)
     }
     
     fun createReminder(reminderSettings: ReminderSettings) {
         viewModelScope.launch {
             val reminderId = reminderRepository.insertReminderSettings(reminderSettings)
-            val updatedReminder = reminderSettings.copy(id = reminderId)
-            ReminderScheduler.scheduleReminder(context, updatedReminder)
+            if (reminderId != null) {
+                val updatedReminder = reminderSettings.copy(id = reminderId)
+                ReminderScheduler.scheduleReminder(context, updatedReminder)
+            }
         }
     }
     
@@ -45,16 +51,17 @@ class ReminderViewModel(
         }
     }
     
-    fun toggleReminderEnabled(reminderId: Long, isEnabled: Boolean) {
+    fun toggleReminderEnabled(reminderId: String, isEnabled: Boolean) {
         viewModelScope.launch {
-            reminderRepository.toggleReminderEnabled(reminderId, isEnabled)
-            val reminder = reminderRepository.getReminderById(reminderId)
-            reminder?.let {
-                val updatedReminder = it.copy(isEnabled = isEnabled)
-                if (isEnabled) {
-                    ReminderScheduler.scheduleReminder(context, updatedReminder)
-                } else {
-                    ReminderScheduler.cancelReminder(context, reminderId)
+            val success = reminderRepository.toggleReminderEnabled(reminderId, isEnabled)
+            if (success) {
+                val reminder = reminderRepository.getReminderById(reminderId)
+                reminder?.let {
+                    if (isEnabled) {
+                        ReminderScheduler.scheduleReminder(context, it)
+                    } else {
+                        ReminderScheduler.cancelReminder(context, reminderId)
+                    }
                 }
             }
         }

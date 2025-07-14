@@ -66,7 +66,7 @@ fun ProjectCard(
                     }
                     
                     Text(
-                        text = "Updated: ${project.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}",
+                        text = "Updated: ${project.getUpdatedAtAsLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}",
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(top = 8.dp)
                     )

@@ -3,9 +3,13 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
- * Firebase-compatible version of Experiment for Firestore storage.
+ * Primary Experiment model for Firebase Firestore storage.
+ * This replaces the Room Experiment entity.
  */
 data class FirebaseExperiment(
     @DocumentId
@@ -40,62 +44,85 @@ data class FirebaseExperiment(
     constructor() : this("", "", "", "", "", "", true, "DAILY", 9, 0, null, false, "", null, null, null, null)
     
     /**
-     * Convert to Room Experiment for local storage/offline support
+     * Get createdAt as LocalDateTime for UI display
      */
-    fun toExperiment(roomHypothesisId: Long): Experiment {
-        return Experiment(
-            id = 0, // Room will auto-generate
-            hypothesisId = roomHypothesisId,
-            name = name,
-            description = description,
-            question = question,
-            notificationsEnabled = notificationsEnabled,
-            notificationFrequency = NotificationFrequency.valueOf(notificationFrequency),
-            notificationTime = java.time.LocalTime.of(notificationTimeHour, notificationTimeMinute),
-            customFrequencyDays = customFrequencyDays,
-            isArchived = isArchived,
-            createdAt = createdAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now(),
-            updatedAt = updatedAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now(),
-            lastNotificationSent = lastNotificationSent?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            },
-            lastLoggedAt = lastLoggedAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            }
+    fun getCreatedAtAsLocalDateTime(): LocalDateTime {
+        return createdAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
+    }
+    
+    /**
+     * Get updatedAt as LocalDateTime for UI display
+     */
+    fun getUpdatedAtAsLocalDateTime(): LocalDateTime {
+        return updatedAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
+    }
+    
+    /**
+     * Get notification time as LocalTime for UI display
+     */
+    fun getNotificationTime(): LocalTime {
+        return LocalTime.of(notificationTimeHour, notificationTimeMinute)
+    }
+    
+    /**
+     * Get notification frequency as enum
+     */
+    fun getNotificationFrequencyEnum(): NotificationFrequency {
+        return try {
+            NotificationFrequency.valueOf(notificationFrequency)
+        } catch (e: IllegalArgumentException) {
+            NotificationFrequency.DAILY
+        }
+    }
+    
+    /**
+     * Get lastNotificationSent as LocalDateTime for UI display
+     */
+    fun getLastNotificationSentAsLocalDateTime(): LocalDateTime? {
+        return lastNotificationSent?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        }
+    }
+    
+    /**
+     * Get lastLoggedAt as LocalDateTime for UI display
+     */
+    fun getLastLoggedAtAsLocalDateTime(): LocalDateTime? {
+        return lastLoggedAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        }
+    }
+    
+    /**
+     * Create a copy with updated timestamp
+     */
+    fun copyWithUpdatedTimestamp(): FirebaseExperiment {
+        return this.copy(updatedAt = null) // Firebase will set this with @ServerTimestamp
+    }
+    
+    /**
+     * Update last notification sent timestamp
+     */
+    fun updateLastNotificationSent(timestamp: LocalDateTime = LocalDateTime.now()): FirebaseExperiment {
+        return this.copy(
+            lastNotificationSent = Timestamp(
+                java.util.Date.from(timestamp.atZone(ZoneId.systemDefault()).toInstant())
+            )
         )
     }
-}
-
-/**
- * Extension function to convert Room Experiment to Firebase Experiment
- */
-fun Experiment.toFirebaseExperiment(userId: String, firebaseHypothesisId: String, firebaseProjectId: String, firebaseId: String = ""): FirebaseExperiment {
-    return FirebaseExperiment(
-        id = firebaseId,
-        hypothesisId = firebaseHypothesisId,
-        projectId = firebaseProjectId,
-        name = name,
-        description = description,
-        question = question,
-        notificationsEnabled = notificationsEnabled,
-        notificationFrequency = notificationFrequency.name,
-        notificationTimeHour = notificationTime.hour,
-        notificationTimeMinute = notificationTime.minute,
-        customFrequencyDays = customFrequencyDays,
-        isArchived = isArchived,
-        userId = userId,
-        // Let Firebase set these automatically with @ServerTimestamp
-        createdAt = null,
-        updatedAt = null,
-        lastNotificationSent = lastNotificationSent?.let { 
-            Timestamp(java.util.Date.from(it.atZone(java.time.ZoneId.systemDefault()).toInstant())) 
-        },
-        lastLoggedAt = lastLoggedAt?.let { 
-            Timestamp(java.util.Date.from(it.atZone(java.time.ZoneId.systemDefault()).toInstant())) 
-        }
-    )
+    
+    /**
+     * Update last logged at timestamp
+     */
+    fun updateLastLoggedAt(timestamp: LocalDateTime = LocalDateTime.now()): FirebaseExperiment {
+        return this.copy(
+            lastLoggedAt = Timestamp(
+                java.util.Date.from(timestamp.atZone(ZoneId.systemDefault()).toInstant())
+            )
+        )
+    }
 } 

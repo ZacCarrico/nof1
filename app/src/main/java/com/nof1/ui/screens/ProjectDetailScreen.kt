@@ -39,26 +39,26 @@ import com.nof1.viewmodel.ReminderViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectDetailScreen(
-    projectId: Long,
+    projectId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToHypothesis: (Long) -> Unit,
-    onNavigateToAddHypothesis: (Long) -> Unit
+    onNavigateToHypothesis: (String) -> Unit,
+    onNavigateToAddHypothesis: (String) -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val projectRepository = application.hybridProjectRepository
-    val hypothesisRepository = application.hybridHypothesisRepository
+    val projectRepository = application.projectRepository
+    val hypothesisRepository = application.hypothesisRepository
     val reminderRepository = application.reminderRepository
     
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
         if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
-            HypothesisGenerationRepository(secureStorage, application.hybridHypothesisRepository)
+            HypothesisGenerationRepository(secureStorage, application.hypothesisRepository)
         } else null
     }
     
     val hypothesisViewModel: HypothesisViewModel = viewModel(
-        factory = HypothesisViewModelFactory(application.hybridHypothesisRepository, generationRepository)
+        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
     )
     
     val reminderViewModel: ReminderViewModel = viewModel(
@@ -68,10 +68,10 @@ fun ProjectDetailScreen(
     val project by projectRepository.getProjectWithHypotheses(projectId)
         .collectAsState(initial = null)
     
-    val hypotheses by application.hybridHypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
+    val hypotheses by application.hypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
     
     val projectReminders by reminderViewModel.getReminderSettingsForEntity(
-        ReminderEntityType.PROJECT, projectId
+        ReminderEntityType.PROJECT.name, projectId
     ).collectAsState(initial = emptyList())
     
     // Hypothesis generation state (temporarily disabled for hybrid system)
@@ -396,6 +396,7 @@ fun ProjectDetailScreen(
             initialReminder = editingReminder,
             entityType = ReminderEntityType.PROJECT,
             entityId = projectId,
+            projectId = projectId,
             onDismiss = {
                 showReminderDialog = false
                 editingReminder = null

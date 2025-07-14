@@ -20,8 +20,8 @@ class ExperimentNotificationWorker(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val experimentId = inputData.getLong("experiment_id", -1)
-            if (experimentId == -1L) {
+            val experimentId = inputData.getString("experiment_id")
+            if (experimentId.isNullOrEmpty()) {
                 return@withContext Result.failure()
             }
 
@@ -38,9 +38,13 @@ class ExperimentNotificationWorker(
             val lastLogEntry = logEntryRepository.getLatestLogEntryForExperiment(experimentId)
             val lastNotificationTime = experiment.lastNotificationSent ?: experiment.createdAt
 
-            if (lastLogEntry != null && lastLogEntry.createdAt.isAfter(lastNotificationTime)) {
-                // User has logged manually since last notification, skip this notification
-                return@withContext Result.success()
+            if (lastLogEntry != null && lastLogEntry.createdAt != null && lastNotificationTime != null) {
+                val lastLogTime = lastLogEntry.createdAt!!.toDate()
+                val lastNotificationDate = lastNotificationTime.toDate()
+                if (lastLogTime.after(lastNotificationDate)) {
+                    // User has logged manually since last notification, skip this notification
+                    return@withContext Result.success()
+                }
             }
 
             // Show notification

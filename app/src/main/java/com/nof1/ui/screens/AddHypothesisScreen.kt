@@ -30,23 +30,23 @@ import com.nof1.viewmodel.HypothesisViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddHypothesisScreen(
-    projectId: Long,
+    projectId: String,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val repository = application.hybridHypothesisRepository
-    val projectRepository = application.hybridProjectRepository
+    val repository = application.hypothesisRepository
+    val projectRepository = application.projectRepository
     
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
         if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
-            HypothesisGenerationRepository(secureStorage, application.hybridHypothesisRepository)
+            HypothesisGenerationRepository(secureStorage, application.hypothesisRepository)
         } else null
     }
     
     val viewModel: HypothesisViewModel = viewModel(
-        factory = HypothesisViewModelFactory(application.hybridHypothesisRepository, generationRepository)
+        factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
     )
     
     var project by remember { mutableStateOf<Project?>(null) }

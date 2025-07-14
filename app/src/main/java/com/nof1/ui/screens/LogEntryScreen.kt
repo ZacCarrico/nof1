@@ -24,7 +24,7 @@ import com.nof1.viewmodel.LogEntryViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogEntryScreen(
-    experimentId: Long,
+    experimentId: String,
     isFromNotification: Boolean = false,
     onNavigateBack: () -> Unit
 ) {

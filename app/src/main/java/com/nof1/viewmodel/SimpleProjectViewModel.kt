@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Simplified ViewModel for projects.
+ * Updated to work with Firebase-only repositories.
  */
 class SimpleProjectViewModel(
     private val repository: ProjectRepository
@@ -49,4 +50,6 @@ class SimpleProjectViewModel(
     fun toggleShowArchived() {
         _showArchived.value = !_showArchived.value
     }
+    
+    fun getProjectById(projectId: String) = repository.getProjectWithHypotheses(projectId)
 } 

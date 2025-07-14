@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing Hypothesis data and UI state.
+ * Updated to work with Firebase-only repositories.
  */
 class HypothesisViewModel(
     private val repository: HypothesisRepositoryInterface,
@@ -52,6 +53,15 @@ class HypothesisViewModel(
             repository.archiveHypothesis(hypothesis)
         }
     }
+    
+    fun getHypothesesForProject(projectId: String) = 
+        (repository as com.nof1.data.repository.HypothesisRepository).getActiveHypothesesForProject(projectId)
+    
+    fun getHypothesisWithExperiments(hypothesisId: String) = 
+        (repository as com.nof1.data.repository.HypothesisRepository).getHypothesisWithExperiments(hypothesisId)
+    
+    fun getHypothesisWithNotes(hypothesisId: String) = 
+        (repository as com.nof1.data.repository.HypothesisRepository).getHypothesisWithNotes(hypothesisId)
     
     fun generateHypotheses(project: Project) {
         if (generationRepository == null) {

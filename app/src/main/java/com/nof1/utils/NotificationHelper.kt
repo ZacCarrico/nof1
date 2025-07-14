@@ -45,7 +45,7 @@ object NotificationHelper {
         }
     }
 
-    fun showExperimentNotification(context: Context, experimentId: Long) {
+    fun showExperimentNotification(context: Context, experimentId: String) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("experiment_id", experimentId)
@@ -54,7 +54,7 @@ object NotificationHelper {
         
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             context, 
-            experimentId.toInt(), 
+            experimentId.hashCode(), 
             intent, 
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -68,7 +68,7 @@ object NotificationHelper {
             .setAutoCancel(true)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(experimentId.toInt(), builder.build())
+        notificationManager.notify(experimentId.hashCode(), builder.build())
     }
 
     fun showCustomReminderNotification(
@@ -76,7 +76,7 @@ object NotificationHelper {
         title: String, 
         description: String,
         entityType: ReminderEntityType,
-        entityId: Long
+        entityId: String
     ) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -87,6 +87,10 @@ object NotificationHelper {
                 }
                 ReminderEntityType.HYPOTHESIS -> {
                     putExtra("hypothesis_id", entityId)
+                    putExtra("from_reminder", true)
+                }
+                ReminderEntityType.EXPERIMENT -> {
+                    putExtra("experiment_id", entityId)
                     putExtra("from_reminder", true)
                 }
             }

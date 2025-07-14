@@ -40,6 +40,9 @@ import com.nof1.viewmodel.NoteViewModel
 import com.nof1.viewmodel.NoteViewModelFactory
 import java.io.File
 import java.time.format.DateTimeFormatter
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Screen for managing notes for a hypothesis.
@@ -47,7 +50,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen(
-    hypothesisId: Long,
+    hypothesisId: String,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -193,7 +196,7 @@ private fun NoteCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = note.createdAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
+                    text = LocalDateTime.ofInstant(note.createdAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
@@ -241,7 +244,7 @@ private fun NoteCard(
             
             if (note.updatedAt != note.createdAt) {
                 Text(
-                    text = "Updated: ${note.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
+                    text = "Updated: ${LocalDateTime.ofInstant(note.updatedAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -474,7 +477,7 @@ private fun NoteDialog(
                             )
                             if (note != null) {
                                 Text(
-                                    text = "Last updated: ${note.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))}",
+                                    text = "Last updated: ${LocalDateTime.ofInstant(note.updatedAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, HH:mm"))}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

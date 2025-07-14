@@ -28,15 +28,16 @@ object ReminderScheduler {
         }
         
         when (reminderSettings.frequency) {
-            ReminderFrequency.ONCE -> scheduleOneTimeReminder(context, reminderSettings)
-            ReminderFrequency.DAILY -> scheduleDailyReminder(context, reminderSettings)
-            ReminderFrequency.WEEKLY -> scheduleWeeklyReminder(context, reminderSettings)
-            ReminderFrequency.MONTHLY -> scheduleMonthlyReminder(context, reminderSettings)
-            ReminderFrequency.CUSTOM -> scheduleCustomReminder(context, reminderSettings)
+            "ONCE" -> scheduleOneTimeReminder(context, reminderSettings)
+            "DAILY" -> scheduleDailyReminder(context, reminderSettings)
+            "WEEKLY" -> scheduleWeeklyReminder(context, reminderSettings)
+            "MONTHLY" -> scheduleMonthlyReminder(context, reminderSettings)
+            "CUSTOM" -> scheduleCustomReminder(context, reminderSettings)
+            else -> scheduleDailyReminder(context, reminderSettings) // Default fallback
         }
     }
     
-    fun cancelReminder(context: Context, reminderId: Long) {
+    fun cancelReminder(context: Context, reminderId: String) {
         WorkManager.getInstance(context)
             .cancelUniqueWork("reminder_$reminderId")
     }
@@ -51,7 +52,7 @@ object ReminderScheduler {
     
     private fun scheduleOneTimeReminder(context: Context, reminderSettings: ReminderSettings) {
         val data = createWorkData(reminderSettings)
-        val initialDelay = calculateInitialDelay(reminderSettings.time)
+        val initialDelay = calculateInitialDelay(reminderSettings.getNotificationTime())
         
         val workRequest = OneTimeWorkRequestBuilder<ReminderNotificationWorker>()
             .setInputData(data)
@@ -69,7 +70,7 @@ object ReminderScheduler {
     
     private fun scheduleDailyReminder(context: Context, reminderSettings: ReminderSettings) {
         val data = createWorkData(reminderSettings)
-        val initialDelay = calculateInitialDelay(reminderSettings.time)
+        val initialDelay = calculateInitialDelay(reminderSettings.getNotificationTime())
         
         val workRequest = PeriodicWorkRequestBuilder<ReminderNotificationWorker>(1, TimeUnit.DAYS)
             .setInputData(data)
@@ -87,7 +88,10 @@ object ReminderScheduler {
     
     private fun scheduleWeeklyReminder(context: Context, reminderSettings: ReminderSettings) {
         val data = createWorkData(reminderSettings)
-        val initialDelay = calculateWeeklyInitialDelay(reminderSettings.time, reminderSettings.daysOfWeek)
+        val initialDelay = calculateWeeklyInitialDelay(
+            reminderSettings.getNotificationTime(), 
+            reminderSettings.getDaysOfWeekSet()
+        )
         
         val workRequest = PeriodicWorkRequestBuilder<ReminderNotificationWorker>(7, TimeUnit.DAYS)
             .setInputData(data)
@@ -105,7 +109,7 @@ object ReminderScheduler {
     
     private fun scheduleMonthlyReminder(context: Context, reminderSettings: ReminderSettings) {
         val data = createWorkData(reminderSettings)
-        val initialDelay = calculateMonthlyInitialDelay(reminderSettings.time)
+        val initialDelay = calculateMonthlyInitialDelay(reminderSettings.getNotificationTime())
         
         val workRequest = PeriodicWorkRequestBuilder<ReminderNotificationWorker>(30, TimeUnit.DAYS)
             .setInputData(data)
@@ -123,7 +127,7 @@ object ReminderScheduler {
     
     private fun scheduleCustomReminder(context: Context, reminderSettings: ReminderSettings) {
         val data = createWorkData(reminderSettings)
-        val initialDelay = calculateInitialDelay(reminderSettings.time)
+        val initialDelay = calculateInitialDelay(reminderSettings.getNotificationTime())
         val customDays = reminderSettings.customFrequencyDays ?: 1
         
         val workRequest = PeriodicWorkRequestBuilder<ReminderNotificationWorker>(customDays.toLong(), TimeUnit.DAYS)
@@ -142,7 +146,7 @@ object ReminderScheduler {
     
     private fun createWorkData(reminderSettings: ReminderSettings): Data {
         return Data.Builder()
-            .putLong("reminder_id", reminderSettings.id)
+            .putString("reminder_id", reminderSettings.id)
             .build()
     }
     
@@ -182,13 +186,26 @@ object ReminderScheduler {
         }
         
         val now = LocalDateTime.now()
-        val currentDayOfWeek = now.dayOfWeek.value
+        val currentDayOfWeek = now.dayOfWeek.value // Java 8 DayOfWeek.value (1 = Monday, 7 = Sunday)
+        
+        // Convert our DayOfWeek enum to integers (1 = Monday, 7 = Sunday)
+        val dayValues = daysOfWeek.map { dayOfWeek ->
+            when (dayOfWeek) {
+                DayOfWeek.MONDAY -> 1
+                DayOfWeek.TUESDAY -> 2
+                DayOfWeek.WEDNESDAY -> 3
+                DayOfWeek.THURSDAY -> 4
+                DayOfWeek.FRIDAY -> 5
+                DayOfWeek.SATURDAY -> 6
+                DayOfWeek.SUNDAY -> 7
+            }
+        }
         
         // Find the next occurrence of any of the specified days
-        val nextDay = daysOfWeek.map { it.value }
+        val nextDay = dayValues
             .filter { it >= currentDayOfWeek }
             .minOrNull()
-            ?: (daysOfWeek.map { it.value }.minOrNull()!! + 7)
+            ?: (dayValues.minOrNull()!! + 7)
         
         val daysUntilNext = if (nextDay >= currentDayOfWeek) {
             nextDay - currentDayOfWeek

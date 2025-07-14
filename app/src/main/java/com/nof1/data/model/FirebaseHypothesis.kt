@@ -3,9 +3,12 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
- * Firebase-compatible version of Hypothesis for Firestore storage.
+ * Primary Hypothesis model for Firebase Firestore storage.
+ * This replaces the Room Hypothesis entity.
  */
 data class FirebaseHypothesis(
     @DocumentId
@@ -27,38 +30,27 @@ data class FirebaseHypothesis(
     constructor() : this("", "", "", "", false, "", null, null)
     
     /**
-     * Convert to Room Hypothesis for local storage/offline support
+     * Get createdAt as LocalDateTime for UI display
      */
-    fun toHypothesis(roomProjectId: Long): Hypothesis {
-        return Hypothesis(
-            id = 0, // Room will auto-generate
-            projectId = roomProjectId,
-            name = name,
-            description = description,
-            isArchived = isArchived,
-            createdAt = createdAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now(),
-            updatedAt = updatedAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now()
-        )
+    fun getCreatedAtAsLocalDateTime(): LocalDateTime {
+        return createdAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
     }
-}
-
-/**
- * Extension function to convert Room Hypothesis to Firebase Hypothesis
- */
-fun Hypothesis.toFirebaseHypothesis(userId: String, firebaseProjectId: String, firebaseId: String = ""): FirebaseHypothesis {
-    return FirebaseHypothesis(
-        id = firebaseId,
-        projectId = firebaseProjectId,
-        name = name,
-        description = description,
-        isArchived = isArchived,
-        userId = userId,
-        // Let Firebase set these automatically with @ServerTimestamp
-        createdAt = null,
-        updatedAt = null
-    )
+    
+    /**
+     * Get updatedAt as LocalDateTime for UI display
+     */
+    fun getUpdatedAtAsLocalDateTime(): LocalDateTime {
+        return updatedAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
+    }
+    
+    /**
+     * Create a copy with updated timestamp
+     */
+    fun copyWithUpdatedTimestamp(): FirebaseHypothesis {
+        return this.copy(updatedAt = null) // Firebase will set this with @ServerTimestamp
+    }
 } 

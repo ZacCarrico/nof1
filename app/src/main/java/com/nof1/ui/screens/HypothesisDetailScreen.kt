@@ -26,6 +26,9 @@ import com.nof1.viewmodel.HypothesisViewModelFactory
 import com.nof1.viewmodel.ReminderViewModel
 import com.nof1.viewmodel.ReminderViewModelFactory
 import java.time.format.DateTimeFormatter
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Screen for viewing and editing hypothesis details.
@@ -33,13 +36,13 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HypothesisDetailScreen(
-    hypothesisId: Long,
+    hypothesisId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToNotes: (Long) -> Unit = {}
+    onNavigateToNotes: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val repository = application.hybridHypothesisRepository
+    val repository = application.hypothesisRepository
     val noteRepository = application.noteRepository
     val reminderRepository = application.reminderRepository
     
@@ -73,7 +76,7 @@ fun HypothesisDetailScreen(
     
     // Load reminder data
     val hypothesisReminders by reminderViewModel.getReminderSettingsForEntity(
-        ReminderEntityType.HYPOTHESIS, hypothesisId
+        ReminderEntityType.HYPOTHESIS.name, hypothesisId
     ).collectAsState(initial = emptyList())
     
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -257,7 +260,7 @@ fun HypothesisDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "Latest: ${notes.first().createdAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
+                                    text = "Latest: ${LocalDateTime.ofInstant(notes.first().createdAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"))}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -320,7 +323,7 @@ fun HypothesisDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = hypothesis!!.createdAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
+                                    text = LocalDateTime.ofInstant(hypothesis!!.createdAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -335,7 +338,7 @@ fun HypothesisDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = hypothesis!!.updatedAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
+                                    text = LocalDateTime.ofInstant(hypothesis!!.updatedAt?.toDate()?.toInstant() ?: Instant.now(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -371,6 +374,7 @@ fun HypothesisDetailScreen(
             initialReminder = editingReminder,
             entityType = ReminderEntityType.HYPOTHESIS,
             entityId = hypothesisId,
+            projectId = hypothesis?.projectId ?: "",
             onDismiss = {
                 showReminderDialog = false
                 editingReminder = null

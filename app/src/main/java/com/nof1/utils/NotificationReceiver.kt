@@ -14,8 +14,8 @@ class NotificationReceiver : BroadcastReceiver() {
         
         when (intent.action) {
             "EXPERIMENT_NOTIFICATION" -> {
-                val experimentId = intent.getLongExtra("experiment_id", -1)
-                if (experimentId != -1L) {
+                val experimentId = intent.getStringExtra("experiment_id")
+                if (!experimentId.isNullOrEmpty()) {
                     // Handle experiment notification
                     NotificationHelper.showExperimentNotification(context, experimentId)
                 }

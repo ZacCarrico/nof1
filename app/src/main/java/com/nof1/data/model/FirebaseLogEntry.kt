@@ -3,15 +3,20 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
- * Firebase-compatible version of LogEntry for Firestore storage.
+ * Primary LogEntry model for Firebase Firestore storage.
+ * This replaces the Room LogEntry entity.
  */
 data class FirebaseLogEntry(
     @DocumentId
     val id: String = "",
     
     val experimentId: String = "",
+    val hypothesisId: String = "", // For easier querying
+    val projectId: String = "", // For easier querying
     val response: String = "",
     val isFromNotification: Boolean = false,
     val userId: String = "",
@@ -20,35 +25,14 @@ data class FirebaseLogEntry(
     val createdAt: Timestamp? = null
 ) {
     // No-argument constructor required by Firestore
-    constructor() : this("", "", "", false, "", null)
+    constructor() : this("", "", "", "", "", false, "", null)
     
     /**
-     * Convert to Room LogEntry for local storage/offline support
+     * Get createdAt as LocalDateTime for UI display
      */
-    fun toLogEntry(roomExperimentId: Long): LogEntry {
-        return LogEntry(
-            id = 0, // Room will auto-generate
-            experimentId = roomExperimentId,
-            response = response,
-            isFromNotification = isFromNotification,
-            createdAt = createdAt?.toDate()?.let { 
-                java.time.LocalDateTime.ofInstant(it.toInstant(), java.time.ZoneId.systemDefault()) 
-            } ?: java.time.LocalDateTime.now()
-        )
+    fun getCreatedAtAsLocalDateTime(): LocalDateTime {
+        return createdAt?.toDate()?.let { 
+            LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
+        } ?: LocalDateTime.now()
     }
-}
-
-/**
- * Extension function to convert Room LogEntry to Firebase LogEntry
- */
-fun LogEntry.toFirebaseLogEntry(userId: String, firebaseExperimentId: String, firebaseId: String = ""): FirebaseLogEntry {
-    return FirebaseLogEntry(
-        id = firebaseId,
-        experimentId = firebaseExperimentId,
-        response = response,
-        isFromNotification = isFromNotification,
-        userId = userId,
-        // Let Firebase set this automatically with @ServerTimestamp
-        createdAt = null
-    )
 } 

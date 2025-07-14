@@ -21,8 +21,8 @@ import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Project
 import com.nof1.ui.components.ProjectCard
-import com.nof1.viewmodel.HybridProjectViewModel
-import com.nof1.viewmodel.HybridProjectViewModelFactory
+import com.nof1.viewmodel.ProjectViewModel
+import com.nof1.viewmodel.ProjectViewModelFactory
 
 /**
  * Screen displaying the list of projects.
@@ -30,17 +30,16 @@ import com.nof1.viewmodel.HybridProjectViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectListScreen(
-    onNavigateToProject: (Long) -> Unit,
+    onNavigateToProject: (String) -> Unit,
     onNavigateToAddProject: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
-    val viewModel: HybridProjectViewModel = viewModel(
-        factory = HybridProjectViewModelFactory(
-            application.hybridProjectRepository,
-            null, // No hypothesis generation in list screen
-            application.authManager
+    val viewModel: ProjectViewModel = viewModel(
+        factory = ProjectViewModelFactory(
+            application.projectRepository,
+            null // No hypothesis generation in list screen
         )
     )
     
@@ -51,8 +50,9 @@ fun ProjectListScreen(
         viewModel.projects.collectAsState(initial = emptyList())
     }
     
-    val isSyncing by viewModel.isSyncing.collectAsState()
-    val syncError by viewModel.syncError.collectAsState()
+    // TODO: Re-implement sync status tracking for Firebase-only version
+    val isSyncing = false
+    val syncError: String? = null
     
     // Log project count for debugging
     LaunchedEffect(projects) {
@@ -62,11 +62,9 @@ fun ProjectListScreen(
         }
     }
     
-    // Log authentication state for debugging
-    LaunchedEffect(viewModel.isAuthenticated) {
-        android.util.Log.d("ProjectListScreen", "Authentication state: ${viewModel.isAuthenticated}")
-        android.util.Log.d("ProjectListScreen", "Current user ID: ${viewModel.currentUserId}")
-    }
+    // TODO: Re-implement authentication state tracking for Firebase-only version
+    val isAuthenticated = true // Assume authenticated for now
+    val currentUserId = "firebase_user" // TODO: Get from AuthManager
 
     Scaffold(
         topBar = {
@@ -77,7 +75,8 @@ fun ProjectListScreen(
                     IconButton(
                         onClick = { 
                             android.util.Log.d("ProjectListScreen", "Manual sync button clicked")
-                            viewModel.syncFromCloud() 
+                            // TODO: Re-implement cloud sync for Firebase-only version
+                            // viewModel.syncFromCloud() 
                         },
                         enabled = !isSyncing
                     ) {
@@ -155,11 +154,11 @@ fun ProjectListScreen(
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        text = "Authenticated: ${viewModel.isAuthenticated}",
+                        text = "Authenticated: $isAuthenticated",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "User ID: ${viewModel.currentUserId ?: "None"}",
+                        text = "User ID: ${currentUserId ?: "None"}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
@@ -186,7 +185,8 @@ fun ProjectListScreen(
                         Button(
                             onClick = { 
                                 android.util.Log.d("ProjectListScreen", "Manual sync from empty state")
-                                viewModel.syncFromCloud() 
+                                // TODO: Re-implement cloud sync for Firebase-only version
+                                // viewModel.syncFromCloud() 
                             }
                         ) {
                             Text("Try Sync From Cloud")

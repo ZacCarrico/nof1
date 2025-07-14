@@ -48,7 +48,7 @@ fun Nof1Navigation(
         }
         
         composable("project/{projectId}") { backStackEntry ->
-            val projectId = backStackEntry.arguments?.getString("projectId")?.toLongOrNull() ?: 0L
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             ProjectDetailScreen(
                 projectId = projectId,
                 onNavigateBack = {
@@ -64,7 +64,7 @@ fun Nof1Navigation(
         }
         
         composable("hypothesis/{hypothesisId}") { backStackEntry ->
-            val hypothesisId = backStackEntry.arguments?.getString("hypothesisId")?.toLongOrNull() ?: 0L
+            val hypothesisId = backStackEntry.arguments?.getString("hypothesisId") ?: ""
             HypothesisDetailScreen(
                 hypothesisId = hypothesisId,
                 onNavigateBack = {
@@ -77,7 +77,7 @@ fun Nof1Navigation(
         }
         
         composable("notes/{hypothesisId}") { backStackEntry ->
-            val hypothesisId = backStackEntry.arguments?.getString("hypothesisId")?.toLongOrNull() ?: 0L
+            val hypothesisId = backStackEntry.arguments?.getString("hypothesisId") ?: ""
             NotesScreen(
                 hypothesisId = hypothesisId,
                 onNavigateBack = {
@@ -87,7 +87,7 @@ fun Nof1Navigation(
         }
         
         composable("add_hypothesis/{projectId}") { backStackEntry ->
-            val projectId = backStackEntry.arguments?.getString("projectId")?.toLongOrNull() ?: 0L
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             AddHypothesisScreen(
                 projectId = projectId,
                 onNavigateBack = {
@@ -102,7 +102,7 @@ fun Nof1Navigation(
         }
         
         composable("log/{experimentId}") { backStackEntry ->
-            val experimentId = backStackEntry.arguments?.getString("experimentId")?.toLongOrNull() ?: 0L
+            val experimentId = backStackEntry.arguments?.getString("experimentId") ?: ""
             LogEntryScreen(
                 experimentId = experimentId,
                 onNavigateBack = {
@@ -112,7 +112,7 @@ fun Nof1Navigation(
         }
         
         composable("log/{experimentId}/{fromNotification}") { backStackEntry ->
-            val experimentId = backStackEntry.arguments?.getString("experimentId")?.toLongOrNull() ?: 0L
+            val experimentId = backStackEntry.arguments?.getString("experimentId") ?: ""
             val fromNotification = backStackEntry.arguments?.getString("fromNotification")?.toBoolean() ?: false
             LogEntryScreen(
                 experimentId = experimentId,
