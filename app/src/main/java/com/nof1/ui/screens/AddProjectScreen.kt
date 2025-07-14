@@ -95,6 +95,13 @@ fun AddProjectScreen(
                             goalError = goal.isBlank()
                             
                             if (!nameError && !goalError) {
+                                // Debug authentication state before creating project
+                                val authManager = application.authManager
+                                android.util.Log.d("AddProjectScreen", "Creating project - Auth state:")
+                                android.util.Log.d("AddProjectScreen", "  User ID: ${authManager.currentUserId}")
+                                android.util.Log.d("AddProjectScreen", "  Is authenticated: ${authManager.isAuthenticated}")
+                                android.util.Log.d("AddProjectScreen", "  Current user: ${authManager.currentUser}")
+                                
                                 val project = Project(
                                     name = name.trim(),
                                     goal = goal.trim(),

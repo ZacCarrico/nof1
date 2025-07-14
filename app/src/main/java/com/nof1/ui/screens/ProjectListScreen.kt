@@ -23,6 +23,9 @@ import com.nof1.data.model.Project
 import com.nof1.ui.components.ProjectCard
 import com.nof1.viewmodel.ProjectViewModel
 import com.nof1.viewmodel.ProjectViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Screen displaying the list of projects.
@@ -54,17 +57,38 @@ fun ProjectListScreen(
     val isSyncing = false
     val syncError: String? = null
     
+    // Get authentication state from AuthManager
+    val authManager = application.authManager
+    val isAuthenticated = authManager.isAuthenticated
+    val currentUserId = authManager.currentUserId
+    
     // Log project count for debugging
     LaunchedEffect(projects) {
         android.util.Log.d("ProjectListScreen", "Projects updated: count=${projects.size}")
         projects.forEachIndexed { index, project ->
             android.util.Log.d("ProjectListScreen", "Project $index: ${project.name} (id=${project.id})")
         }
+        
+        // If projects are empty and user is authenticated, try a direct query as fallback
+        if (projects.isEmpty() && authManager.isAuthenticated) {
+            android.util.Log.w("ProjectListScreen", "Projects list is empty but user is authenticated - testing direct query")
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val directCount = application.projectRepository.testDirectQuery()
+                    android.util.Log.d("ProjectListScreen", "Fallback direct query found $directCount projects")
+                } catch (e: Exception) {
+                    android.util.Log.e("ProjectListScreen", "Fallback direct query failed: ${e.message}", e)
+                }
+            }
+        }
     }
     
-    // TODO: Re-implement authentication state tracking for Firebase-only version
-    val isAuthenticated = true // Assume authenticated for now
-    val currentUserId = "firebase_user" // TODO: Get from AuthManager
+    // Monitor authentication state changes
+    val authState by authManager.authStateFlow().collectAsState(initial = authManager.currentUser)
+    
+    LaunchedEffect(authState) {
+        android.util.Log.d("ProjectListScreen", "Auth state changed: user=${authState?.uid ?: "null"}")
+    }
 
     Scaffold(
         topBar = {
@@ -184,12 +208,24 @@ fun ProjectListScreen(
                         )
                         Button(
                             onClick = { 
-                                android.util.Log.d("ProjectListScreen", "Manual sync from empty state")
-                                // TODO: Re-implement cloud sync for Firebase-only version
-                                // viewModel.syncFromCloud() 
+                                android.util.Log.d("ProjectListScreen", "Manual refresh button clicked")
+                                android.util.Log.d("ProjectListScreen", "Current user: ${authManager.currentUserId}")
+                                android.util.Log.d("ProjectListScreen", "Is authenticated: ${authManager.isAuthenticated}")
+                                
+                                // Test direct Firebase query
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        val directResult = application.projectRepository.testDirectQuery()
+                                        android.util.Log.d("ProjectListScreen", "Direct query result: $directResult projects found")
+                                    } catch (e: Exception) {
+                                        android.util.Log.e("ProjectListScreen", "Direct query failed: ${e.message}", e)
+                                    }
+                                }
+                                
+                                viewModel.refreshProjects()
                             }
                         ) {
-                            Text("Try Sync From Cloud")
+                            Text("Manual Refresh")
                         }
                     }
                 }

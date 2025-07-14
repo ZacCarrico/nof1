@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 /**
  * ViewModel for handling authentication operations.
@@ -19,10 +20,23 @@ class AuthViewModel(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
     init {
-        // Check if user is already authenticated
-        _uiState.value = _uiState.value.copy(
-            isAuthenticated = authManager.isAuthenticated
-        )
+        // Listen to authentication state changes
+        viewModelScope.launch {
+            authManager.authStateFlow().collect { user ->
+                android.util.Log.d("AuthViewModel", "Auth state changed: user=${user?.uid ?: "null"}")
+                _uiState.value = _uiState.value.copy(
+                    isAuthenticated = user != null
+                )
+            }
+        }
+        
+        // Auto sign-in anonymously if no user is authenticated
+        if (!authManager.isAuthenticated) {
+            viewModelScope.launch {
+                android.util.Log.d("AuthViewModel", "No authenticated user found, signing in anonymously")
+                signInAnonymously()
+            }
+        }
     }
     
     /**
@@ -146,6 +160,69 @@ class AuthViewModel(
      */
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+    
+    /**
+     * Check if current user is anonymous
+     */
+    fun isAnonymousUser(): Boolean {
+        return authManager.currentUser?.isAnonymous == true
+    }
+    
+    /**
+     * Get current user ID for debugging
+     */
+    fun getCurrentUserId(): String? {
+        return authManager.currentUserId
+    }
+    
+    /**
+     * Link anonymous account with email/password (upgrade anonymous account)
+     */
+    fun linkWithEmailPassword(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Email and password are required"
+            )
+            return
+        }
+        
+        if (password.length < 6) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Password must be at least 6 characters"
+            )
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
+            
+            try {
+                val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+                val result = authManager.currentUser?.linkWithCredential(credential)?.await()
+                
+                if (result?.user != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        errorMessage = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to link account"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Failed to link account"
+                )
+            }
+        }
     }
 }
 

@@ -18,8 +18,15 @@ class ProjectRepository : BaseFirebaseRepository() {
      */
     suspend fun insertProject(project: Project): String? {
         val userId = requireUserId()
-        val firebaseProject = project.copy(userId = userId)
-        return addDocument(projectsCollection, firebaseProject)
+        val firebaseProject = project.copy(
+            userId = userId,
+            createdAt = null, // Let Firebase set this with @ServerTimestamp
+            updatedAt = null  // Let Firebase set this with @ServerTimestamp
+        )
+        android.util.Log.d("ProjectRepository", "Inserting project: name=${project.name}, userId=$userId")
+        val result = addDocument(projectsCollection, firebaseProject)
+        android.util.Log.d("ProjectRepository", "Insert result: $result")
+        return result
     }
     
     /**
@@ -58,11 +65,21 @@ class ProjectRepository : BaseFirebaseRepository() {
      */
     fun getActiveProjects(): Flow<List<Project>> {
         val userId = requireUserId()
+        android.util.Log.d("ProjectRepository", "Setting up active projects listener for userId: $userId")
         return getCollectionAsFlow<Project>(projectsCollection) { collection ->
-            collection
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
-                .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            try {
+                // Try with orderBy first
+                collection
+                    .whereEqualTo("userId", userId)
+                    .whereEqualTo("isArchived", false)
+                    .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            } catch (e: Exception) {
+                android.util.Log.w("ProjectRepository", "OrderBy query failed, trying without orderBy: ${e.message}")
+                // Fallback without orderBy in case of indexing issues
+                collection
+                    .whereEqualTo("userId", userId)
+                    .whereEqualTo("isArchived", false)
+            }
         }
     }
     
@@ -195,6 +212,58 @@ class ProjectRepository : BaseFirebaseRepository() {
                 .mapNotNull { it.toObject(Experiment::class.java) }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+    
+    /**
+     * Direct query method for debugging - bypasses Flow
+     */
+    suspend fun testDirectQuery(): Int {
+        val userId = requireUserId()
+        android.util.Log.d("ProjectRepository", "Testing direct query with userId: $userId")
+        
+        return try {
+            // Query all projects for this user
+            val allProjectsSnapshot = projectsCollection
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+            
+            android.util.Log.d("ProjectRepository", "All projects query returned ${allProjectsSnapshot.documents.size} documents")
+            allProjectsSnapshot.documents.forEach { doc ->
+                android.util.Log.d("ProjectRepository", "Project doc ${doc.id}: ${doc.data}")
+            }
+            
+            // Query active projects specifically (without orderBy)
+            val activeProjectsSnapshot = projectsCollection
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("isArchived", false)
+                .get()
+                .await()
+            
+            android.util.Log.d("ProjectRepository", "Active projects query returned ${activeProjectsSnapshot.documents.size} documents")
+            activeProjectsSnapshot.documents.forEach { doc ->
+                android.util.Log.d("ProjectRepository", "Active project doc ${doc.id}: ${doc.data}")
+            }
+            
+            // Test query with orderBy to see if indexing is the issue
+            try {
+                val orderedProjectsSnapshot = projectsCollection
+                    .whereEqualTo("userId", userId)
+                    .whereEqualTo("isArchived", false)
+                    .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+                
+                android.util.Log.d("ProjectRepository", "Ordered projects query returned ${orderedProjectsSnapshot.documents.size} documents")
+            } catch (e: Exception) {
+                android.util.Log.e("ProjectRepository", "Ordered query failed - possible indexing issue: ${e.message}", e)
+            }
+            
+            activeProjectsSnapshot.documents.size
+        } catch (e: Exception) {
+            android.util.Log.e("ProjectRepository", "Direct query failed: ${e.message}", e)
+            -1
         }
     }
 } 

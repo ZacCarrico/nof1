@@ -42,6 +42,13 @@ class ProjectViewModel(
     val projectsWithHypotheses = repository.getActiveProjectsWithHypotheses()
     val allProjectsWithHypotheses = repository.getAllProjectsWithHypotheses()
     
+    // Add a refresh trigger to force reload projects
+    private val _refreshTrigger = MutableStateFlow(0)
+    fun refreshProjects() {
+        _refreshTrigger.value += 1
+        android.util.Log.d("ProjectViewModel", "Manual refresh triggered")
+    }
+    
     fun toggleShowArchived() {
         _showArchived.value = !_showArchived.value
     }
@@ -51,10 +58,15 @@ class ProjectViewModel(
     fun insertProject(project: Project) {
         viewModelScope.launch {
             try {
+                android.util.Log.d("ProjectViewModel", "Inserting project: ${project.name}")
                 val projectId = repository.insertProject(project)
                 if (projectId != null) {
+                    android.util.Log.d("ProjectViewModel", "Project inserted successfully with ID: $projectId")
                     val savedProject = project.copy(id = projectId)
                     _savedProject = savedProject
+                    
+                    // Trigger a refresh to ensure the new project appears in the list
+                    refreshProjects()
                     
                     // Generate hypotheses but don't auto-save them
                     generationRepository?.let { genRepo ->
@@ -74,9 +86,11 @@ class ProjectViewModel(
                             }
                     }
                 } else {
+                    android.util.Log.e("ProjectViewModel", "Failed to insert project - projectId is null")
                     _generationError.value = "Failed to save project"
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ProjectViewModel", "Exception while inserting project: ${e.message}", e)
                 _generationError.value = "Failed to save project: ${e.message}"
             }
         }

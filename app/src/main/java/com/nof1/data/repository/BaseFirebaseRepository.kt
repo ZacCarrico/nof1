@@ -38,9 +38,13 @@ abstract class BaseFirebaseRepository {
         collectionRef: CollectionReference,
         crossinline query: (CollectionReference) -> Query = { it }
     ): Flow<List<T>> = callbackFlow {
-        android.util.Log.d("BaseFirebaseRepository", "Setting up real-time listener for ${collectionRef.path}")
+        val currentUserId = getCurrentUserId()
+        android.util.Log.d("BaseFirebaseRepository", "Setting up real-time listener for ${collectionRef.path} with userId: $currentUserId")
         
-        val listener = query(collectionRef).addSnapshotListener { snapshot, error ->
+        val finalQuery = query(collectionRef)
+        android.util.Log.d("BaseFirebaseRepository", "Query path: ${finalQuery}")
+        
+        val listener = finalQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("BaseFirebaseRepository", "Error in real-time listener for ${collectionRef.path}: ${error.message}", error)
                 // Don't close the flow on error, Firebase will retry
@@ -49,6 +53,12 @@ abstract class BaseFirebaseRepository {
             
             if (snapshot != null) {
                 android.util.Log.d("BaseFirebaseRepository", "Received ${snapshot.documents.size} documents from ${collectionRef.path}")
+                android.util.Log.d("BaseFirebaseRepository", "Snapshot metadata: fromCache=${snapshot.metadata.isFromCache}")
+                
+                snapshot.documents.forEach { doc ->
+                    android.util.Log.v("BaseFirebaseRepository", "Document ${doc.id}: ${doc.data}")
+                }
+                
                 val items = snapshot.documents.mapNotNull { doc ->
                     try {
                         doc.toObject(T::class.java)?.also {
@@ -59,6 +69,7 @@ abstract class BaseFirebaseRepository {
                         null
                     }
                 }
+                android.util.Log.d("BaseFirebaseRepository", "Emitting ${items.size} items from ${collectionRef.path}")
                 trySend(items).isSuccess
             } else {
                 android.util.Log.w("BaseFirebaseRepository", "Received null snapshot for ${collectionRef.path}")
