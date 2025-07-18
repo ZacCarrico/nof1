@@ -54,6 +54,9 @@ class FirebaseHypothesisRepository : BaseFirebaseRepository() {
                     android.util.Log.d("FirebaseHypothesisRepository", "Firebase returned ${hypotheses.size} hypotheses for project $firebaseProjectId")
                     emit(hypotheses)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.d("FirebaseHypothesisRepository", "Hypotheses collection cancelled")
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("FirebaseHypothesisRepository", "Error getting hypotheses for project $firebaseProjectId: ${e.message}", e)
                 emit(emptyList<FirebaseHypothesis>())
@@ -99,6 +102,9 @@ class FirebaseHypothesisRepository : BaseFirebaseRepository() {
                 }.collect { hypotheses ->
                     emit(hypotheses)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.d("FirebaseHypothesisRepository", "Archived hypotheses collection cancelled")
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("FirebaseHypothesisRepository", "Error getting archived hypotheses: ${e.message}", e)
                 emit(emptyList<FirebaseHypothesis>())

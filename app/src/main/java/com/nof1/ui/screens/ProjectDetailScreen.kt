@@ -70,6 +70,8 @@ fun ProjectDetailScreen(
     
     val hypotheses by application.hybridHypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
     
+
+    
     val projectReminders by reminderViewModel.getReminderSettingsForEntity(
         ReminderEntityType.PROJECT, projectId
     ).collectAsState(initial = emptyList())
