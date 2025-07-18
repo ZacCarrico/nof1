@@ -30,6 +30,9 @@ interface LogEntryDao {
     @Query("SELECT * FROM log_entries WHERE experimentId = :experimentId ORDER BY createdAt DESC")
     fun getLogEntriesForExperiment(experimentId: Long): Flow<List<LogEntry>>
     
+    @Query("SELECT * FROM log_entries WHERE experimentId = :experimentId ORDER BY createdAt DESC")
+    suspend fun getLogEntriesForExperimentSync(experimentId: Long): List<LogEntry>
+    
     @Query("SELECT * FROM log_entries WHERE experimentId = :experimentId AND createdAt > :timestamp ORDER BY createdAt DESC LIMIT 1")
     suspend fun getLatestLogEntryAfterTimestamp(experimentId: Long, timestamp: LocalDateTime): LogEntry?
     

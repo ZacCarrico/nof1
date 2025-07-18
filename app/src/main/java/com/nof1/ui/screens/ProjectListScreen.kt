@@ -40,7 +40,9 @@ fun ProjectListScreen(
         factory = HybridProjectViewModelFactory(
             application.hybridProjectRepository,
             null, // No hypothesis generation in list screen
-            application.authManager
+            application.authManager,
+            context, // Pass context for notification cancellation
+            application.reminderRepository // Pass reminder repository for cleanup
         )
     )
     

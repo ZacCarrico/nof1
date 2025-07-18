@@ -1,16 +1,21 @@
 package com.nof1.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.nof1.data.model.Hypothesis
 import com.nof1.data.model.Project
+import com.nof1.data.model.ReminderEntityType
 import com.nof1.data.repository.HybridProjectRepository
 import com.nof1.data.repository.HypothesisGenerationRepository
+import com.nof1.data.repository.ReminderRepository
 import com.nof1.utils.AuthManager
+import com.nof1.utils.ReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
 
@@ -21,7 +26,9 @@ import kotlinx.coroutines.flow.collectLatest
 class HybridProjectViewModel(
     private val hybridRepository: HybridProjectRepository,
     private val generationRepository: HypothesisGenerationRepository? = null,
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private val context: Context? = null,
+    private val reminderRepository: ReminderRepository? = null
 ) : ViewModel() {
     
     private val _showArchived = MutableStateFlow(false)
@@ -142,6 +149,10 @@ class HybridProjectViewModel(
     fun deleteProject(project: Project) {
         viewModelScope.launch {
             try {
+                // Cancel all scheduled reminders and notifications before deletion
+                cancelProjectNotifications(project.id)
+                
+                // Delete the project (includes comprehensive cleanup)
                 hybridRepository.deleteProject(project)
             } catch (e: Exception) {
                 _syncError.value = "Failed to delete project: ${e.message}"
@@ -212,17 +223,56 @@ class HybridProjectViewModel(
     fun signOut() {
         authManager.signOut()
     }
+
+    /**
+     * Cancel all scheduled notifications for a project and its children
+     */
+    private suspend fun cancelProjectNotifications(projectId: Long) {
+        context?.let { ctx ->
+            reminderRepository?.let { repo ->
+                try {
+                    // Get project with all hypotheses for comprehensive cleanup
+                    val projectWithHypotheses = hybridRepository.getProjectWithHypotheses(projectId).first()
+                    
+                    // Cancel project reminders
+                    val projectReminders = repo.getReminderSettingsForEntitySync(ReminderEntityType.PROJECT, projectId)
+                    projectReminders.forEach { reminder ->
+                        ReminderScheduler.cancelReminder(ctx, reminder.id)
+                    }
+                    
+                    // Cancel hypothesis reminders
+                    projectWithHypotheses?.hypotheses?.forEach { hypothesis ->
+                        val hypothesisReminders = repo.getReminderSettingsForEntitySync(ReminderEntityType.HYPOTHESIS, hypothesis.id)
+                        hypothesisReminders.forEach { reminder ->
+                            ReminderScheduler.cancelReminder(ctx, reminder.id)
+                        }
+                    }
+                    
+                    // TODO: Cancel experiment notifications
+                    // This would require access to ExperimentRepository and WorkManager
+                    // For now, we log this as a TODO since the repository pattern makes
+                    // it challenging to access all required dependencies here
+                    android.util.Log.d("HybridProjectViewModel", "TODO: Cancel experiment notifications for project $projectId")
+                    
+                } catch (e: Exception) {
+                    android.util.Log.e("HybridProjectViewModel", "Failed to cancel notifications for project $projectId: ${e.message}")
+                }
+            }
+        }
+    }
 }
 
 class HybridProjectViewModelFactory(
     private val hybridRepository: HybridProjectRepository,
     private val generationRepository: HypothesisGenerationRepository? = null,
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private val context: Context? = null,
+    private val reminderRepository: ReminderRepository? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HybridProjectViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HybridProjectViewModel(hybridRepository, generationRepository, authManager) as T
+            return HybridProjectViewModel(hybridRepository, generationRepository, authManager, context, reminderRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

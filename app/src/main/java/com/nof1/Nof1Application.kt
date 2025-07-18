@@ -36,9 +36,19 @@ class Nof1Application : Application() {
         HybridHypothesisRepository(database.hypothesisDao(), firebaseHypothesisRepository, firebaseMappingRepository)
     }
     val hybridProjectRepository by lazy { 
-        val projectRepo = HybridProjectRepository(database.projectDao(), firebaseProjectRepository, firebaseMappingRepository)
+        val projectRepo = HybridProjectRepository(
+            database.projectDao(), 
+            firebaseProjectRepository, 
+            firebaseMappingRepository,
+            firebaseHypothesisRepository,
+            firebaseExperimentRepository,
+            firebaseLogEntryRepository,
+            database.logEntryDao()
+        )
         // Set hypothesis repository after initialization to avoid circular dependency
         projectRepo.setHypothesisRepository(hybridHypothesisRepository)
+        // Set cleanup repositories for comprehensive project deletion
+        projectRepo.setCleanupRepositories(reminderRepository, noteRepository)
         projectRepo
     }
     // TODO: Create HybridExperimentRepository

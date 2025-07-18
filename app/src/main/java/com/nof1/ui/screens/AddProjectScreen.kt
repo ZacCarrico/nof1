@@ -45,7 +45,9 @@ fun AddProjectScreen(
         factory = HybridProjectViewModelFactory(
             application.hybridProjectRepository,
             generationRepository,
-            application.authManager
+            application.authManager,
+            context, // Pass context for notification cancellation
+            application.reminderRepository // Pass reminder repository for cleanup
         )
     )
     
