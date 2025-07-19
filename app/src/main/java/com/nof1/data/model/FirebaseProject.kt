@@ -2,6 +2,7 @@ package com.nof1.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -31,6 +32,7 @@ data class FirebaseProject(
     /**
      * Get createdAt as LocalDateTime for UI display
      */
+    @Exclude
     fun getCreatedAtAsLocalDateTime(): LocalDateTime {
         return createdAt?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -40,6 +42,7 @@ data class FirebaseProject(
     /**
      * Get updatedAt as LocalDateTime for UI display
      */
+    @Exclude
     fun getUpdatedAtAsLocalDateTime(): LocalDateTime {
         return updatedAt?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -49,6 +52,7 @@ data class FirebaseProject(
     /**
      * Create a copy with updated timestamp
      */
+    @Exclude
     fun copyWithUpdatedTimestamp(): FirebaseProject {
         return this.copy(updatedAt = null) // Firebase will set this with @ServerTimestamp
     }
