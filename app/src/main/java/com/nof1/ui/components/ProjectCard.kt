@@ -106,7 +106,7 @@ fun ProjectCard(
                 }
             }
             
-            if (project.isArchived) {
+            if (project.archived) {
                 Text(
                     text = stringResource(R.string.project_archived),
                     style = MaterialTheme.typography.labelSmall,

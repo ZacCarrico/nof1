@@ -16,7 +16,7 @@ data class FirebaseProject(
     
     val name: String = "",
     val goal: String = "",
-    val isArchived: Boolean = false,
+    val archived: Boolean = false,
     val userId: String = "", // For multi-user support
     
     @ServerTimestamp

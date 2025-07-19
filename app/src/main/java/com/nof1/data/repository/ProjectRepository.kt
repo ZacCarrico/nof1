@@ -49,7 +49,7 @@ class ProjectRepository : BaseFirebaseRepository() {
      * Archive a project
      */
     suspend fun archiveProject(project: Project): Boolean {
-        val archivedProject = project.copy(isArchived = true).copyWithUpdatedTimestamp()
+        val archivedProject = project.copy(archived = true).copyWithUpdatedTimestamp()
         return updateDocument(projectsCollection, project.id, archivedProject)
     }
     
@@ -71,14 +71,14 @@ class ProjectRepository : BaseFirebaseRepository() {
                 // Try with orderBy first
                 collection
                     .whereEqualTo("userId", userId)
-                    .whereEqualTo("isArchived", false)
+                    .whereEqualTo("archived", false)
                     .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
             } catch (e: Exception) {
                 android.util.Log.w("ProjectRepository", "OrderBy query failed, trying without orderBy: ${e.message}")
                 // Fallback without orderBy in case of indexing issues
                 collection
                     .whereEqualTo("userId", userId)
-                    .whereEqualTo("isArchived", false)
+                    .whereEqualTo("archived", false)
             }
         }
     }
@@ -91,7 +91,7 @@ class ProjectRepository : BaseFirebaseRepository() {
         return getCollectionAsFlow<Project>(projectsCollection) { collection ->
             collection
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", true)
+                .whereEqualTo("archived", true)
                 .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
         }
     }
@@ -250,7 +250,7 @@ class ProjectRepository : BaseFirebaseRepository() {
             try {
                 val orderedProjectsSnapshot = projectsCollection
                     .whereEqualTo("userId", userId)
-                    .whereEqualTo("isArchived", false)
+                    .whereEqualTo("archived", false)
                     .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
                     .get()
                     .await()
