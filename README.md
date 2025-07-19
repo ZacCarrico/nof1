@@ -85,7 +85,6 @@ flowchart TD
         LogEntryRepo["LogEntryRepository"]
         ExperimentRepo["ExperimentRepository"]
         HypothesisGenRepo["HypothesisGenerationRepository"]
-        InMemoryProjectRepo["InMemoryProjectRepository"]
     end
     subgraph Data
         LocalDB["Nof1Database (DAOs)"]
@@ -114,7 +113,7 @@ flowchart TD
     HypothesisVM --> HypothesisRepo
     NoteVM --> NoteRepo
     LogEntryVM --> LogEntryRepo
-    SimpleProjectVM --> InMemoryProjectRepo
+    SimpleProjectVM --> ProjectRepo
     ProjectRepo --> LocalDB
     ReminderRepo --> LocalDB
     HypothesisRepo --> LocalDB
