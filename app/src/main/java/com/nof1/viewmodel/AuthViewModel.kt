@@ -29,14 +29,6 @@ class AuthViewModel(
                 )
             }
         }
-        
-        // Auto sign-in anonymously if no user is authenticated
-        if (!authManager.isAuthenticated) {
-            viewModelScope.launch {
-                android.util.Log.d("AuthViewModel", "No authenticated user found, signing in anonymously")
-                signInAnonymously()
-            }
-        }
     }
     
     /**
