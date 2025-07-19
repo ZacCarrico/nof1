@@ -2,6 +2,7 @@ package com.nof1.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -46,6 +47,7 @@ data class FirebaseExperiment(
     /**
      * Get createdAt as LocalDateTime for UI display
      */
+    @Exclude
     fun getCreatedAtAsLocalDateTime(): LocalDateTime {
         return createdAt?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -55,6 +57,7 @@ data class FirebaseExperiment(
     /**
      * Get updatedAt as LocalDateTime for UI display
      */
+    @Exclude
     fun getUpdatedAtAsLocalDateTime(): LocalDateTime {
         return updatedAt?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -64,6 +67,7 @@ data class FirebaseExperiment(
     /**
      * Get notification time as LocalTime for UI display
      */
+    @Exclude
     fun getNotificationTime(): LocalTime {
         return LocalTime.of(notificationTimeHour, notificationTimeMinute)
     }
@@ -71,6 +75,7 @@ data class FirebaseExperiment(
     /**
      * Get notification frequency as enum
      */
+    @Exclude
     fun getNotificationFrequencyEnum(): NotificationFrequency {
         return try {
             NotificationFrequency.valueOf(notificationFrequency)
@@ -82,6 +87,7 @@ data class FirebaseExperiment(
     /**
      * Get lastNotificationSent as LocalDateTime for UI display
      */
+    @Exclude
     fun getLastNotificationSentAsLocalDateTime(): LocalDateTime? {
         return lastNotificationSent?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -91,6 +97,7 @@ data class FirebaseExperiment(
     /**
      * Get lastLoggedAt as LocalDateTime for UI display
      */
+    @Exclude
     fun getLastLoggedAtAsLocalDateTime(): LocalDateTime? {
         return lastLoggedAt?.toDate()?.let { 
             LocalDateTime.ofInstant(it.toInstant(), ZoneId.systemDefault()) 
@@ -100,6 +107,7 @@ data class FirebaseExperiment(
     /**
      * Create a copy with updated timestamp
      */
+    @Exclude
     fun copyWithUpdatedTimestamp(): FirebaseExperiment {
         return this.copy(updatedAt = null) // Firebase will set this with @ServerTimestamp
     }
@@ -107,6 +115,7 @@ data class FirebaseExperiment(
     /**
      * Update last notification sent timestamp
      */
+    @Exclude
     fun updateLastNotificationSent(timestamp: LocalDateTime = LocalDateTime.now()): FirebaseExperiment {
         return this.copy(
             lastNotificationSent = Timestamp(
@@ -118,6 +127,7 @@ data class FirebaseExperiment(
     /**
      * Update last logged at timestamp
      */
+    @Exclude
     fun updateLastLoggedAt(timestamp: LocalDateTime = LocalDateTime.now()): FirebaseExperiment {
         return this.copy(
             lastLoggedAt = Timestamp(
