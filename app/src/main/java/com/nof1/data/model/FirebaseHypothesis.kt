@@ -3,6 +3,7 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -18,7 +19,7 @@ data class FirebaseHypothesis(
     val projectId: String = "",
     val name: String = "",
     val description: String = "",
-    val isArchived: Boolean = false,
+    val archived: Boolean = false,
     val userId: String = "",
     
     @ServerTimestamp

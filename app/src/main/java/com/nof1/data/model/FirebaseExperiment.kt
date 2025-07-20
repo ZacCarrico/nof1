@@ -29,7 +29,7 @@ data class FirebaseExperiment(
     val notificationTimeMinute: Int = 0,
     val customFrequencyDays: Int? = null,
     
-    val isArchived: Boolean = false,
+    val archived: Boolean = false,
     val userId: String = "",
     
     @ServerTimestamp

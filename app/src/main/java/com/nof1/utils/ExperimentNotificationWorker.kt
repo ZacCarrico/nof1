@@ -30,7 +30,7 @@ class ExperimentNotificationWorker(
             val logEntryRepository = application.logEntryRepository
 
             val experiment = experimentRepository.getExperimentById(experimentId)
-            if (experiment == null || experiment.isArchived || !experiment.notificationsEnabled) {
+            if (experiment == null || experiment.archived || !experiment.notificationsEnabled) {
                 return@withContext Result.success()
             }
 

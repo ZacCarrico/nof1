@@ -42,7 +42,7 @@ class HypothesisRepository : BaseFirebaseRepository(), HypothesisRepositoryInter
      * Archive a hypothesis
      */
     override suspend fun archiveHypothesis(hypothesis: Hypothesis): Boolean {
-        val archivedHypothesis = hypothesis.copy(isArchived = true).copyWithUpdatedTimestamp()
+        val archivedHypothesis = hypothesis.copy(archived = true).copyWithUpdatedTimestamp()
         return updateDocument(hypothesesCollection, hypothesis.id, archivedHypothesis)
     }
     
@@ -62,7 +62,7 @@ class HypothesisRepository : BaseFirebaseRepository(), HypothesisRepositoryInter
             collection
                 .whereEqualTo("projectId", projectId)
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
+                .whereEqualTo("archived", false)
                 .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
         }
     }

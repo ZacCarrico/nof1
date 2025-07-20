@@ -31,7 +31,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isArchived",
+          "fieldPath": "archived",
           "order": "ASCENDING"
         },
         {
@@ -53,7 +53,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isArchived",
+          "fieldPath": "archived",
           "order": "ASCENDING"
         },
         {

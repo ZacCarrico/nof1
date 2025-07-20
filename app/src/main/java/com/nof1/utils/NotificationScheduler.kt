@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 object NotificationScheduler {
     
     fun scheduleExperimentNotification(context: Context, experiment: Experiment) {
-        if (!experiment.notificationsEnabled || experiment.isArchived) {
+        if (!experiment.notificationsEnabled || experiment.archived) {
             cancelExperimentNotification(context, experiment.id)
             return
         }

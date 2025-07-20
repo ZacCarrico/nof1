@@ -237,7 +237,7 @@ class ProjectRepository : BaseFirebaseRepository() {
             // Query active projects specifically (without orderBy)
             val activeProjectsSnapshot = projectsCollection
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
+                .whereEqualTo("archived", false)
                 .get()
                 .await()
             

@@ -3,6 +3,7 @@ package com.nof1.data.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 import java.time.LocalTime
 
@@ -16,6 +17,7 @@ data class FirebaseReminderSettings(
     val entityType: String = "", // "PROJECT" or "HYPOTHESIS"
     val entityId: String = "", // Firebase document ID of the entity
     val projectId: String = "", // For easier querying
+    @PropertyName("isEnabled")
     val isEnabled: Boolean = true,
     val title: String = "",
     val description: String = "",

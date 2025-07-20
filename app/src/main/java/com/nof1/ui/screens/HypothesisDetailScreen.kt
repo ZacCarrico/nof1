@@ -346,7 +346,7 @@ fun HypothesisDetailScreen(
                                 )
                             }
                             
-                            if (hypothesis!!.isArchived) {
+                            if (hypothesis!!.archived) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween

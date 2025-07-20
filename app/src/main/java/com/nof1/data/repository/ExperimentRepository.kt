@@ -43,7 +43,7 @@ class ExperimentRepository : BaseFirebaseRepository() {
      * Archive an experiment
      */
     suspend fun archiveExperiment(experiment: Experiment): Boolean {
-        val archivedExperiment = experiment.copy(isArchived = true).copyWithUpdatedTimestamp()
+        val archivedExperiment = experiment.copy(archived = true).copyWithUpdatedTimestamp()
         return updateDocument(experimentsCollection, experiment.id, archivedExperiment)
     }
     
@@ -89,7 +89,7 @@ class ExperimentRepository : BaseFirebaseRepository() {
             collection
                 .whereEqualTo("hypothesisId", hypothesisId)
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("isArchived", false)
+                .whereEqualTo("archived", false)
                 .orderBy("updatedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
         }
     }
@@ -116,7 +116,7 @@ class ExperimentRepository : BaseFirebaseRepository() {
             collection
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("notificationsEnabled", true)
-                .whereEqualTo("isArchived", false)
+                .whereEqualTo("archived", false)
         }
     }
     

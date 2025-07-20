@@ -106,7 +106,7 @@ fun HypothesisCard(
                 }
             }
             
-            if (hypothesis.isArchived) {
+            if (hypothesis.archived) {
                 Text(
                     text = "Archived",
                     style = MaterialTheme.typography.labelSmall,

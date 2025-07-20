@@ -27,7 +27,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 try {
                     val experiments = application.experimentRepository.getExperimentsWithNotificationsEnabled().firstOrNull() ?: emptyList()
                     experiments.forEach { experiment: Experiment ->
-                        if (experiment.notificationsEnabled && !experiment.isArchived) {
+                        if (experiment.notificationsEnabled && !experiment.archived) {
                             NotificationScheduler.scheduleExperimentNotification(context, experiment)
                         }
                     }
