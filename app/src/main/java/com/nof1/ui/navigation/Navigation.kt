@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.nof1.ui.screens.AddExperimentScreen
 import com.nof1.ui.screens.AddHypothesisScreen
 import com.nof1.ui.screens.AddProjectScreen
 import com.nof1.ui.screens.ApiKeySettingsScreen
@@ -72,6 +73,9 @@ fun Nof1Navigation(
                 },
                 onNavigateToNotes = { hypothesisId ->
                     navController.navigate("notes/$hypothesisId")
+                },
+                onNavigateToAddExperiment = { hypothesisId ->
+                    navController.navigate("add_experiment/$hypothesisId")
                 }
             )
         }
@@ -90,6 +94,16 @@ fun Nof1Navigation(
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             AddHypothesisScreen(
                 projectId = projectId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("add_experiment/{hypothesisId}") { backStackEntry ->
+            val hypothesisId = backStackEntry.arguments?.getString("hypothesisId") ?: ""
+            AddExperimentScreen(
+                hypothesisId = hypothesisId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

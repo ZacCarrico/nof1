@@ -80,9 +80,9 @@ fun AddHypothesisScreen(
                         onClick = {
                             // Validate inputs
                             nameError = name.isBlank()
-                            descriptionError = description.isBlank()
+                            descriptionError = false
                             
-                            if (!nameError && !descriptionError) {
+                            if (!nameError) {
                                 val hypothesis = Hypothesis(
                                     projectId = projectId,
                                     name = name.trim(),
@@ -126,7 +126,7 @@ fun AddHypothesisScreen(
                         description = newValue
                         descriptionError = false
                     },
-                    label = { Text(stringResource(R.string.hypothesis_description)) },
+                    label = { Text(stringResource(R.string.hypothesis_description) + " (Optional)") },
                     isError = descriptionError,
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 5

@@ -2,7 +2,9 @@ package com.nof1.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,15 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nof1.Nof1Application
 import com.nof1.R
+import com.nof1.data.model.Experiment
 import com.nof1.data.model.Hypothesis
-import com.nof1.data.model.ReminderEntityType
-import com.nof1.data.model.ReminderSettings
-import com.nof1.ui.components.ReminderSettingsCard
-import com.nof1.ui.components.ReminderDialog
 import com.nof1.viewmodel.HypothesisViewModel
 import com.nof1.viewmodel.HypothesisViewModelFactory
-import com.nof1.viewmodel.ReminderViewModel
-import com.nof1.viewmodel.ReminderViewModelFactory
 import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.LocalDateTime
@@ -38,23 +35,17 @@ import java.time.ZoneId
 fun HypothesisDetailScreen(
     hypothesisId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToNotes: (String) -> Unit = {}
+    onNavigateToNotes: (String) -> Unit = {},
+    onNavigateToAddExperiment: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
     val repository = application.hypothesisRepository
     val noteRepository = application.noteRepository
-    val reminderRepository = application.reminderRepository
+    val experimentRepository = application.experimentRepository
     
     val viewModel: HypothesisViewModel = viewModel(
         factory = HypothesisViewModelFactory(repository)
-    )
-    
-    val reminderViewModel: ReminderViewModel = viewModel(
-        factory = ReminderViewModelFactory(
-            application = LocalContext.current.applicationContext as android.app.Application,
-            reminderRepository = reminderRepository
-        )
     )
     
     var hypothesis by remember { mutableStateOf<Hypothesis?>(null) }
@@ -77,13 +68,8 @@ fun HypothesisDetailScreen(
     // Load notes data
     val notes by noteRepository.getNotesForHypothesis(hypothesisId).collectAsState(initial = emptyList())
     
-    // Load reminder data
-    val hypothesisReminders by reminderViewModel.getReminderSettingsForEntity(
-        ReminderEntityType.HYPOTHESIS.name, hypothesisId
-    ).collectAsState(initial = emptyList())
-    
-    var showReminderDialog by remember { mutableStateOf(false) }
-    var editingReminder by remember { mutableStateOf<ReminderSettings?>(null) }
+    // Load experiments data
+    val experiments by experimentRepository.getActiveExperimentsForHypothesis(hypothesisId).collectAsState(initial = emptyList())
     
     Scaffold(
         topBar = {
@@ -106,9 +92,9 @@ fun HypothesisDetailScreen(
                                 onClick = {
                                     // Validate inputs
                                     nameError = editedName.isBlank()
-                                    descriptionError = editedDescription.isBlank()
+                                    descriptionError = false
                                     
-                                    if (!nameError && !descriptionError) {
+                                    if (!nameError) {
                                         val updatedHypothesis = hypothesis!!.copy(
                                             name = editedName.trim(),
                                             description = editedDescription.trim()
@@ -182,7 +168,7 @@ fun HypothesisDetailScreen(
                             editedDescription = newValue
                             descriptionError = false
                         },
-                        label = { Text(stringResource(R.string.hypothesis_description)) },
+                        label = { Text(stringResource(R.string.hypothesis_description) + " (Optional)") },
                         isError = descriptionError,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 5
@@ -222,10 +208,18 @@ fun HypothesisDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Text(
-                                text = hypothesis!!.description,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                            if (hypothesis!!.description.isNotBlank()) {
+                                Text(
+                                    text = hypothesis!!.description,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            } else {
+                                Text(
+                                    text = "No description provided",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                     
@@ -282,24 +276,127 @@ fun HypothesisDetailScreen(
                         }
                     }
                     
-                    // Reminder settings card
-                    ReminderSettingsCard(
-                        reminders = hypothesisReminders,
-                        onAddReminder = {
-                            editingReminder = null
-                            showReminderDialog = true
-                        },
-                        onEditReminder = { reminder ->
-                            editingReminder = reminder
-                            showReminderDialog = true
-                        },
-                        onDeleteReminder = { reminder ->
-                            reminderViewModel.deleteReminder(reminder)
-                        },
-                        onToggleReminder = { reminder, isEnabled ->
-                            reminderViewModel.toggleReminderEnabled(reminder.id, isEnabled)
+                    // Experiments section
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Experiments",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${experiments.size} ${if (experiments.size == 1) "experiment" else "experiments"}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            if (experiments.isEmpty()) {
+                                Text(
+                                    text = "No experiments created yet",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = { 
+                                            onNavigateToAddExperiment(hypothesisId)
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Create Manually")
+                                    }
+                                    
+                                    OutlinedButton(
+                                        onClick = { 
+                                            // TODO: Generate experiments with AI
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("AI Generate")
+                                    }
+                                }
+                            } else {
+                                // Show experiment list
+                                experiments.forEach { experiment ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        ),
+                                        onClick = {
+                                            // TODO: Navigate to experiment detail
+                                        }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp)
+                                        ) {
+                                            Text(
+                                                text = experiment.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            if (experiment.description.isNotBlank()) {
+                                                Text(
+                                                    text = experiment.description,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 4.dp),
+                                                    maxLines = 2
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { 
+                                            onNavigateToAddExperiment(hypothesisId)
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Add Experiment")
+                                    }
+                                    
+                                    OutlinedButton(
+                                        onClick = { 
+                                            // TODO: Generate experiments with AI
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("AI Generate")
+                                    }
+                                }
+                            }
                         }
-                    )
+                    }
                     
                     // Metadata card
                     Card(
@@ -368,29 +465,5 @@ fun HypothesisDetailScreen(
                 }
             }
         }
-    }
-    
-    // Reminder dialog
-    if (showReminderDialog) {
-        ReminderDialog(
-            isEdit = editingReminder != null,
-            initialReminder = editingReminder,
-            entityType = ReminderEntityType.HYPOTHESIS,
-            entityId = hypothesisId,
-            projectId = hypothesis?.projectId ?: "",
-            onDismiss = {
-                showReminderDialog = false
-                editingReminder = null
-            },
-            onSave = { reminder ->
-                if (editingReminder != null) {
-                    reminderViewModel.updateReminder(reminder)
-                } else {
-                    reminderViewModel.createReminder(reminder)
-                }
-                showReminderDialog = false
-                editingReminder = null
-            }
-        )
     }
 } 

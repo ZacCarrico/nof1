@@ -22,16 +22,10 @@ import com.nof1.data.model.Hypothesis
 import com.nof1.data.repository.HypothesisGenerationRepository
 import com.nof1.data.repository.HypothesisRepository
 import com.nof1.data.repository.ProjectRepository
-import com.nof1.data.model.ReminderEntityType
-import com.nof1.data.model.ReminderSettings
 import com.nof1.ui.components.HypothesisCard
-import com.nof1.ui.components.ReminderSettingsCard
-import com.nof1.ui.components.ReminderDialog
 import com.nof1.utils.SecureStorage
 import com.nof1.viewmodel.HypothesisViewModel
 import com.nof1.viewmodel.HypothesisViewModelFactory
-import com.nof1.viewmodel.ReminderViewModel
-import com.nof1.viewmodel.ReminderViewModelFactory
 
 /**
  * Screen displaying the details of a project and its hypotheses.
@@ -48,7 +42,6 @@ fun ProjectDetailScreen(
     val application = context.applicationContext as Nof1Application
     val projectRepository = application.projectRepository
     val hypothesisRepository = application.hypothesisRepository
-    val reminderRepository = application.reminderRepository
     
     val secureStorage = remember { SecureStorage(context) }
     val generationRepository = remember { 
@@ -61,29 +54,16 @@ fun ProjectDetailScreen(
         factory = HypothesisViewModelFactory(application.hypothesisRepository, generationRepository)
     )
     
-    val reminderViewModel: ReminderViewModel = viewModel(
-        factory = ReminderViewModelFactory(
-            application = LocalContext.current.applicationContext as android.app.Application,
-            reminderRepository = reminderRepository
-        )
-    )
     
     val project by projectRepository.getProjectWithHypotheses(projectId)
         .collectAsState(initial = null)
     
     val hypotheses by application.hypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
     
-    val projectReminders by reminderViewModel.getReminderSettingsForEntity(
-        ReminderEntityType.PROJECT.name, projectId
-    ).collectAsState(initial = emptyList())
-    
     // Hypothesis generation state (temporarily disabled for hybrid system)
     val generatedHypotheses = remember { mutableStateOf(emptyList<String>()) }
     val isGenerating = remember { mutableStateOf(false) }
     val generationError = remember { mutableStateOf<String?>(null) }
-    
-    var showReminderDialog by remember { mutableStateOf(false) }
-    var editingReminder by remember { mutableStateOf<ReminderSettings?>(null) }
     var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
 
     Scaffold(
@@ -143,26 +123,6 @@ fun ProjectDetailScreen(
                     }
                 }
                 
-                // Reminder settings section
-                item {
-                    ReminderSettingsCard(
-                        reminders = projectReminders,
-                        onAddReminder = {
-                            editingReminder = null
-                            showReminderDialog = true
-                        },
-                        onEditReminder = { reminder ->
-                            editingReminder = reminder
-                            showReminderDialog = true
-                        },
-                        onDeleteReminder = { reminder ->
-                            reminderViewModel.deleteReminder(reminder)
-                        },
-                        onToggleReminder = { reminder, isEnabled ->
-                            reminderViewModel.toggleReminderEnabled(reminder.id, isEnabled)
-                        }
-                    )
-                }
                 
                 // Hypotheses section header
                 item {
@@ -392,27 +352,4 @@ fun ProjectDetailScreen(
         }
     }
     
-    // Reminder dialog
-    if (showReminderDialog) {
-        ReminderDialog(
-            isEdit = editingReminder != null,
-            initialReminder = editingReminder,
-            entityType = ReminderEntityType.PROJECT,
-            entityId = projectId,
-            projectId = projectId,
-            onDismiss = {
-                showReminderDialog = false
-                editingReminder = null
-            },
-            onSave = { reminder ->
-                if (editingReminder != null) {
-                    reminderViewModel.updateReminder(reminder)
-                } else {
-                    reminderViewModel.createReminder(reminder)
-                }
-                showReminderDialog = false
-                editingReminder = null
-            }
-        )
-    }
 } 
