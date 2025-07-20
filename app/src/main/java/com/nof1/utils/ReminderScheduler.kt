@@ -90,7 +90,7 @@ object ReminderScheduler {
         val data = createWorkData(reminderSettings)
         val initialDelay = calculateWeeklyInitialDelay(
             reminderSettings.getNotificationTime(), 
-            reminderSettings.getDaysOfWeekSet()
+            reminderSettings.toDaysOfWeekSet()
         )
         
         val workRequest = PeriodicWorkRequestBuilder<ReminderNotificationWorker>(7, TimeUnit.DAYS)

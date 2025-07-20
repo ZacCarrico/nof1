@@ -39,7 +39,7 @@ fun ReminderDialog(
     var selectedFrequency by remember { mutableStateOf(initialReminder?.frequency ?: "DAILY") }
     var selectedTime by remember { mutableStateOf(initialReminder?.getNotificationTime() ?: LocalTime.of(9, 0)) }
     var customDays by remember { mutableStateOf(initialReminder?.customFrequencyDays?.toString() ?: "1") }
-    var selectedDaysOfWeek by remember { mutableStateOf(initialReminder?.getDaysOfWeekSet() ?: emptySet()) }
+    var selectedDaysOfWeek by remember { mutableStateOf(initialReminder?.toDaysOfWeekSet() ?: emptySet()) }
     var isEnabled by remember { mutableStateOf(initialReminder?.isEnabled ?: true) }
     
     var showTimePicker by remember { mutableStateOf(false) }

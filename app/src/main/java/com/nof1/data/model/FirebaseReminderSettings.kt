@@ -2,6 +2,7 @@ package com.nof1.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 import java.time.LocalTime
 
@@ -38,6 +39,7 @@ data class FirebaseReminderSettings(
     /**
      * Get the notification time as LocalTime
      */
+    @Exclude
     fun getNotificationTime(): LocalTime {
         return LocalTime.of(timeHour, timeMinute)
     }
@@ -45,7 +47,8 @@ data class FirebaseReminderSettings(
     /**
      * Get the days of week as a Set of DayOfWeek enum values
      */
-    fun getDaysOfWeekSet(): Set<DayOfWeek> {
+    @Exclude
+    fun toDaysOfWeekSet(): Set<DayOfWeek> {
         return daysOfWeek.mapNotNull { dayString ->
             try {
                 DayOfWeek.valueOf(dayString)
