@@ -36,7 +36,8 @@ fun HypothesisDetailScreen(
     hypothesisId: String,
     onNavigateBack: () -> Unit,
     onNavigateToNotes: (String) -> Unit = {},
-    onNavigateToAddExperiment: (String) -> Unit = {}
+    onNavigateToAddExperiment: (String) -> Unit = {},
+    onNavigateToExperiment: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Nof1Application
@@ -344,7 +345,7 @@ fun HypothesisDetailScreen(
                                             containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         ),
                                         onClick = {
-                                            // TODO: Navigate to experiment detail
+                                            onNavigateToExperiment(experiment.id)
                                         }
                                     ) {
                                         Column(

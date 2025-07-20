@@ -8,7 +8,9 @@ import androidx.navigation.compose.rememberNavController
 import com.nof1.ui.screens.AddExperimentScreen
 import com.nof1.ui.screens.AddHypothesisScreen
 import com.nof1.ui.screens.AddProjectScreen
+import com.nof1.ui.screens.AddReminderScreen
 import com.nof1.ui.screens.ApiKeySettingsScreen
+import com.nof1.ui.screens.ExperimentDetailScreen
 import com.nof1.ui.screens.HypothesisDetailScreen
 import com.nof1.ui.screens.LogEntryScreen
 import com.nof1.ui.screens.NotesScreen
@@ -76,6 +78,9 @@ fun Nof1Navigation(
                 },
                 onNavigateToAddExperiment = { hypothesisId ->
                     navController.navigate("add_experiment/$hypothesisId")
+                },
+                onNavigateToExperiment = { experimentId ->
+                    navController.navigate("experiment/$experimentId")
                 }
             )
         }
@@ -110,9 +115,33 @@ fun Nof1Navigation(
             )
         }
         
+        composable("add_reminder/{experimentId}") { backStackEntry ->
+            val experimentId = backStackEntry.arguments?.getString("experimentId") ?: ""
+            AddReminderScreen(
+                experimentId = experimentId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
         composable("experiment/{experimentId}") { backStackEntry ->
-            val experimentId = backStackEntry.arguments?.getString("experimentId")?.toLongOrNull() ?: 0L
-            // TODO: Implement ExperimentDetailScreen
+            val experimentId = backStackEntry.arguments?.getString("experimentId") ?: ""
+            ExperimentDetailScreen(
+                experimentId = experimentId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToAddLog = { experimentId ->
+                    navController.navigate("log/$experimentId")
+                },
+                onNavigateToAddReminder = { experimentId ->
+                    navController.navigate("add_reminder/$experimentId")
+                },
+                onNavigateToEditReminder = { reminderId ->
+                    // TODO: Implement reminder editing navigation
+                }
+            )
         }
         
         composable("log/{experimentId}") { backStackEntry ->
