@@ -1,6 +1,8 @@
 package com.nof1.viewmodel
 
+import android.app.Application
 import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,9 +17,11 @@ import kotlinx.coroutines.launch
  * Updated to work with Firebase-only repositories.
  */
 class ReminderViewModel(
-    private val reminderRepository: ReminderRepository,
-    private val context: Context
-) : ViewModel() {
+    application: Application,
+    private val reminderRepository: ReminderRepository
+) : AndroidViewModel(application) {
+    
+    private val context: Context = application.applicationContext
     
     fun getReminderSettingsForEntity(entityType: String, entityId: String): Flow<List<ReminderSettings>> {
         return reminderRepository.getReminderSettingsForEntity(entityType, entityId)
@@ -79,13 +83,13 @@ class ReminderViewModel(
  * Factory for creating ReminderViewModel instances.
  */
 class ReminderViewModelFactory(
-    private val reminderRepository: ReminderRepository,
-    private val context: Context
+    private val application: Application,
+    private val reminderRepository: ReminderRepository
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReminderViewModel::class.java)) {
-            return ReminderViewModel(reminderRepository, context) as T
+            return ReminderViewModel(application, reminderRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

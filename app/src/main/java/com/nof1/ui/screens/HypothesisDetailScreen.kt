@@ -51,7 +51,10 @@ fun HypothesisDetailScreen(
     )
     
     val reminderViewModel: ReminderViewModel = viewModel(
-        factory = ReminderViewModelFactory(reminderRepository, context)
+        factory = ReminderViewModelFactory(
+            application = LocalContext.current.applicationContext as android.app.Application,
+            reminderRepository = reminderRepository
+        )
     )
     
     var hypothesis by remember { mutableStateOf<Hypothesis?>(null) }

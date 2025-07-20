@@ -1,4 +1,4 @@
-# Nof1 - Personal Experiment Tracker
+  # Nof1 - Personal Experiment Tracker
 
 A simple, elegant Android app that helps users run structured projects for achieving goals through systematic experimentation.
 
