@@ -60,10 +60,10 @@ fun ProjectDetailScreen(
     
     val hypotheses by application.hypothesisRepository.getActiveHypothesesForProject(projectId).collectAsState(initial = emptyList())
     
-    // Hypothesis generation state (temporarily disabled for hybrid system)
-    val generatedHypotheses = remember { mutableStateOf(emptyList<String>()) }
-    val isGenerating = remember { mutableStateOf(false) }
-    val generationError = remember { mutableStateOf<String?>(null) }
+    // Hypothesis generation state
+    val generatedHypotheses by hypothesisViewModel.generatedHypotheses.collectAsState()
+    val isGenerating by hypothesisViewModel.isGenerating.collectAsState()
+    val generationError by hypothesisViewModel.generationError.collectAsState()
     var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
 
     Scaffold(
@@ -140,13 +140,15 @@ fun ProjectDetailScreen(
                         if (generationRepository != null && project?.project != null) {
                             Button(
                                 onClick = { 
-                                    // TODO: Implement hypothesis generation in hybrid system
-                                    selectedHypotheses = setOf() // Reset selection
+                                    if (project?.project != null) {
+                                        hypothesisViewModel.generateHypotheses(project!!.project!!)
+                                        selectedHypotheses = setOf() // Reset selection
+                                    }
                                 },
-                                enabled = !isGenerating.value,
+                                enabled = !isGenerating,
                                 modifier = Modifier.height(36.dp)
                             ) {
-                                if (isGenerating.value) {
+                                if (isGenerating) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
                                         strokeWidth = 2.dp
@@ -160,7 +162,7 @@ fun ProjectDetailScreen(
                                 }
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (isGenerating.value) "Generating..." else "Generate",
+                                    text = if (isGenerating) "Generating..." else "Generate",
                                     style = MaterialTheme.typography.labelMedium
                                 )
                             }
@@ -169,7 +171,7 @@ fun ProjectDetailScreen(
                 }
                 
                 // Generation error display
-                generationError.value?.let { error ->
+                generationError?.let { error ->
                     item {
                         Card(
                             colors = CardDefaults.cardColors(
@@ -187,7 +189,7 @@ fun ProjectDetailScreen(
                 }
                 
                 // Generated hypotheses selection UI
-                if (generationRepository != null && generatedHypotheses.value.isNotEmpty()) {
+                if (generationRepository != null && generatedHypotheses.isNotEmpty()) {
                     item {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -211,7 +213,7 @@ fun ProjectDetailScreen(
                             ) {
                                 Button(
                                     onClick = {
-                                        val selectedList = selectedHypotheses.map { generatedHypotheses.value[it] }
+                                        val selectedList = selectedHypotheses.map { generatedHypotheses[it] }
                                         selectedList.forEachIndexed { index, hypothesis ->
                                             val hypothesisObj = Hypothesis(
                                                 projectId = projectId,
@@ -224,7 +226,7 @@ fun ProjectDetailScreen(
                                             )
                                             hypothesisViewModel.insertHypothesis(hypothesisObj)
                                         }
-                                        generatedHypotheses.value = emptyList()
+                                        hypothesisViewModel.clearGeneratedHypotheses()
                                     },
                                     enabled = selectedHypotheses.isNotEmpty()
                                 ) {
@@ -233,7 +235,7 @@ fun ProjectDetailScreen(
                                 
                                 OutlinedButton(
                                     onClick = {
-                                        generatedHypotheses.value.forEachIndexed { index, hypothesis ->
+                                        generatedHypotheses.forEachIndexed { index, hypothesis ->
                                             val hypothesisObj = Hypothesis(
                                                 projectId = projectId,
                                                 name = if (hypothesis.length > 50) {
@@ -245,7 +247,7 @@ fun ProjectDetailScreen(
                                             )
                                             hypothesisViewModel.insertHypothesis(hypothesisObj)
                                         }
-                                        generatedHypotheses.value = emptyList()
+                                        hypothesisViewModel.clearGeneratedHypotheses()
                                     }
                                 ) {
                                     Text("Accept All")
@@ -253,7 +255,7 @@ fun ProjectDetailScreen(
                                 
                                 TextButton(
                                     onClick = {
-                                        generatedHypotheses.value = emptyList()
+                                        hypothesisViewModel.clearGeneratedHypotheses()
                                     }
                                 ) {
                                     Text("Dismiss")
@@ -262,8 +264,8 @@ fun ProjectDetailScreen(
                         }
                     }
                     
-                    items(generatedHypotheses.value.size) { index ->
-                        val hypothesis = generatedHypotheses.value[index]
+                    items(generatedHypotheses.size) { index ->
+                        val hypothesis = generatedHypotheses[index]
                         val isSelected = selectedHypotheses.contains(index)
                         
                         Card(
@@ -324,7 +326,7 @@ fun ProjectDetailScreen(
                 }
                 
                 // Existing hypotheses content
-                if (hypotheses.isEmpty() && generatedHypotheses.value.isEmpty()) {
+                if (hypotheses.isEmpty() && generatedHypotheses.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier

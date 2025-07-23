@@ -20,6 +20,10 @@ import com.nof1.Nof1Application
 import com.nof1.R
 import com.nof1.data.model.Experiment
 import com.nof1.data.model.Hypothesis
+import com.nof1.data.repository.ExperimentGenerationRepository
+import com.nof1.utils.SecureStorage
+import com.nof1.viewmodel.ExperimentViewModel
+import com.nof1.viewmodel.ExperimentViewModelFactory
 import com.nof1.viewmodel.HypothesisViewModel
 import com.nof1.viewmodel.HypothesisViewModelFactory
 import java.time.format.DateTimeFormatter
@@ -45,8 +49,19 @@ fun HypothesisDetailScreen(
     val noteRepository = application.noteRepository
     val experimentRepository = application.experimentRepository
     
+    val secureStorage = remember { SecureStorage(context) }
+    val experimentGenerationRepository = remember { 
+        if (secureStorage.hasOpenAIApiKey() || secureStorage.getApiBaseUrl().equals("test", ignoreCase = true)) {
+            ExperimentGenerationRepository(secureStorage, application.experimentRepository)
+        } else null
+    }
+    
     val viewModel: HypothesisViewModel = viewModel(
         factory = HypothesisViewModelFactory(repository)
+    )
+    
+    val experimentViewModel: ExperimentViewModel = viewModel(
+        factory = ExperimentViewModelFactory(application.experimentRepository, experimentGenerationRepository)
     )
     
     var hypothesis by remember { mutableStateOf<Hypothesis?>(null) }
@@ -56,6 +71,12 @@ fun HypothesisDetailScreen(
     
     var nameError by remember { mutableStateOf(false) }
     var descriptionError by remember { mutableStateOf(false) }
+    
+    // Experiment generation state
+    val generatedExperiments by experimentViewModel.generatedExperiments.collectAsState()
+    val isGeneratingExperiments by experimentViewModel.isGenerating.collectAsState()
+    val experimentGenerationError by experimentViewModel.generationError.collectAsState()
+    var selectedExperiments by remember { mutableStateOf(setOf<Int>()) }
     
     // Load hypothesis data
     LaunchedEffect(hypothesisId) {
@@ -327,7 +348,10 @@ fun HypothesisDetailScreen(
                                     
                                     OutlinedButton(
                                         onClick = { 
-                                            // TODO: Generate experiments with AI
+                                            if (hypothesis != null) {
+                                                experimentViewModel.generateExperiments(hypothesis!!)
+                                                selectedExperiments = setOf() // Reset selection  
+                                            }
                                         },
                                         modifier = Modifier.weight(1f)
                                     ) {
@@ -386,7 +410,10 @@ fun HypothesisDetailScreen(
                                     
                                     OutlinedButton(
                                         onClick = { 
-                                            // TODO: Generate experiments with AI
+                                            if (hypothesis != null) {
+                                                experimentViewModel.generateExperiments(hypothesis!!)
+                                                selectedExperiments = setOf() // Reset selection  
+                                            }
                                         },
                                         modifier = Modifier.weight(1f)
                                     ) {

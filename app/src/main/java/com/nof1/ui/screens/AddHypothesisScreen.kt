@@ -56,9 +56,9 @@ fun AddHypothesisScreen(
     var nameError by remember { mutableStateOf(false) }
     var descriptionError by remember { mutableStateOf(false) }
     
-    val generatedHypotheses = remember { mutableStateOf(emptyList<String>()) }
-    val isGenerating = remember { mutableStateOf(false) }
-    val generationError = remember { mutableStateOf<String?>(null) }
+    val generatedHypotheses by viewModel.generatedHypotheses.collectAsState()
+    val isGenerating by viewModel.isGenerating.collectAsState()
+    val generationError by viewModel.generationError.collectAsState()
     
     var selectedHypotheses by remember { mutableStateOf(setOf<Int>()) }
     
@@ -156,11 +156,13 @@ fun AddHypothesisScreen(
                                 if (generationRepository != null) {
                                     Button(
                                         onClick = { 
-                                            // TODO: Implement hypothesis generation in hybrid system
+                                            if (project != null) {
+                                                viewModel.generateHypotheses(project!!)
+                                            }
                                         },
-                                        enabled = !isGenerating.value
+                                        enabled = !isGenerating
                                     ) {
-                                        if (isGenerating.value) {
+                                        if (isGenerating) {
                                             CircularProgressIndicator(
                                                 modifier = Modifier.size(16.dp),
                                                 strokeWidth = 2.dp
@@ -173,7 +175,7 @@ fun AddHypothesisScreen(
                                             )
                                         }
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text(if (isGenerating.value) "Generating..." else "Generate")
+                                        Text(if (isGenerating) "Generating..." else "Generate")
                                     }
                                 }
                             }
@@ -192,7 +194,7 @@ fun AddHypothesisScreen(
                                 }
                             }
                             
-                            generationError.value?.let { error ->
+                            generationError?.let { error ->
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.errorContainer
@@ -209,7 +211,7 @@ fun AddHypothesisScreen(
                     }
                 }
                 
-                if (generationRepository != null && generatedHypotheses.value.isNotEmpty()) {
+                if (generationRepository != null && generatedHypotheses.isNotEmpty()) {
                     item {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -227,7 +229,7 @@ fun AddHypothesisScreen(
                             ) {
                                 Button(
                                     onClick = {
-                                        val selectedList = selectedHypotheses.map { generatedHypotheses.value[it] }
+                                        val selectedList = selectedHypotheses.map { generatedHypotheses[it] }
                                         selectedList.forEachIndexed { index, hypothesis ->
                                             val hypothesisObj = Hypothesis(
                                                 projectId = projectId,
@@ -245,7 +247,7 @@ fun AddHypothesisScreen(
                                 
                                 OutlinedButton(
                                     onClick = {
-                                        generatedHypotheses.value.forEachIndexed { index, hypothesis ->
+                                        generatedHypotheses.forEachIndexed { index, hypothesis ->
                                             val hypothesisObj = Hypothesis(
                                                 projectId = projectId,
                                                 name = "Generated Hypothesis ${index + 1}",
@@ -262,8 +264,8 @@ fun AddHypothesisScreen(
                         }
                     }
                     
-                    items(generatedHypotheses.value.size) { index ->
-                        val hypothesis = generatedHypotheses.value[index]
+                    items(generatedHypotheses.size) { index ->
+                        val hypothesis = generatedHypotheses[index]
                         val isSelected = selectedHypotheses.contains(index)
                         
                         Card(
