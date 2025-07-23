@@ -1,6 +1,8 @@
 package com.nof1.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -168,6 +170,7 @@ fun HypothesisDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -487,6 +490,139 @@ fun HypothesisDetailScreen(
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
+                            }
+                        }
+                    }
+                    
+                    // Experiment generation error display
+                    experimentGenerationError?.let { error ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = error,
+                                modifier = Modifier.padding(12.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    
+                    // Generated experiments selection UI
+                    if (experimentGenerationRepository != null && generatedExperiments.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "Generated Experiments",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                
+                                Text(
+                                    text = "Click experiments to select those to save",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            val selectedList = selectedExperiments.map { generatedExperiments[it] }
+                                            selectedList.forEachIndexed { index, experimentText ->
+                                                val experiment = Experiment(
+                                                    hypothesisId = hypothesisId,
+                                                    projectId = hypothesis?.projectId ?: "",
+                                                    name = if (experimentText.length > 50) {
+                                                        experimentText.take(47) + "..."
+                                                    } else {
+                                                        experimentText
+                                                    },
+                                                    description = experimentText,
+                                                    question = ""
+                                                )
+                                                experimentViewModel.insertExperiment(experiment)
+                                            }
+                                            experimentViewModel.clearGeneratedExperiments()
+                                        },
+                                        enabled = selectedExperiments.isNotEmpty()
+                                    ) {
+                                        Text("Save Selected")
+                                    }
+                                    
+                                    OutlinedButton(
+                                        onClick = {
+                                            generatedExperiments.forEachIndexed { index, experimentText ->
+                                                val experiment = Experiment(
+                                                    hypothesisId = hypothesisId,
+                                                    projectId = hypothesis?.projectId ?: "",
+                                                    name = if (experimentText.length > 50) {
+                                                        experimentText.take(47) + "..."
+                                                    } else {
+                                                        experimentText
+                                                    },
+                                                    description = experimentText,
+                                                    question = ""
+                                                )
+                                                experimentViewModel.insertExperiment(experiment)
+                                            }
+                                            experimentViewModel.clearGeneratedExperiments()
+                                        }
+                                    ) {
+                                        Text("Accept All")
+                                    }
+                                    
+                                    TextButton(
+                                        onClick = {
+                                            experimentViewModel.clearGeneratedExperiments()
+                                        }
+                                    ) {
+                                        Text("Dismiss")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Generated experiment cards
+                        generatedExperiments.forEachIndexed { index, experimentText ->
+                            val isSelected = selectedExperiments.contains(index)
+                            
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    selectedExperiments = if (isSelected) {
+                                        selectedExperiments - index
+                                    } else {
+                                        selectedExperiments + index
+                                    }
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                )
+                            ) {
+                                Text(
+                                    text = experimentText,
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
                             }
                         }
                     }
