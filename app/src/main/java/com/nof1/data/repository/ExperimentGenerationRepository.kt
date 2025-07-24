@@ -199,7 +199,7 @@ class ExperimentGenerationRepository(
     }
     
     private fun buildPrompt(hypothesis: Hypothesis, count: Int): String {
-        return "Generate $count experiment ideas to test the hypothesis: \"${hypothesis.name}\". Description: ${hypothesis.description}. Each experiment should be a specific, actionable test that could provide evidence for or against this hypothesis."
+        return "Generate $count self-experiment ideas to test the hypothesis: \"${hypothesis.name}\". Description: ${hypothesis.description}. Each experiment should be a specific, actionable test for self-experimentation that could provide evidence for or against this hypothesis. The experiments should use only resources and methods that an average person can easily access without special equipment, expertise, or significant expense."
     }
     
     private fun parseExperiments(content: String): List<String> {
