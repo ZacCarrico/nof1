@@ -80,11 +80,28 @@ jobs:
       # Gradle creates, starts and stops the emulator defined in build-logic.
       - name: Run instrumented tests
         run: >-
-          ./gradlew
+          ./gradlew --continue
           :core:database:pixel6Api30DebugAndroidTest
           :core:data:pixel6Api30DebugAndroidTest
           :app:pixel6Api30DebugAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+
+      # Gradle's output only links to the report, so print each failed test's message.
+      - name: Show failed tests
+        if: failure()
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import xml.etree.ElementTree as ET
+
+          pattern = "**/build/outputs/androidTest-results/**/*.xml"
+          for path in glob.glob(pattern, recursive=True):
+              for case in ET.parse(path).getroot().iter("testcase"):
+                  for problem in case:
+                      if problem.tag in ("failure", "error"):
+                          print(f"FAILED {case.get('classname')}.{case.get('name')}")
+                          print((problem.text or problem.get("message") or "").strip()[:3000])
+          EOF
 
       - name: Upload reports
         if: failure()
