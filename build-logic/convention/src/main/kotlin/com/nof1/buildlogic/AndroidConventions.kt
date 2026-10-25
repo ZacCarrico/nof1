@@ -34,6 +34,9 @@ internal fun configureAndroid(extension: CommonExtension) {
             apiLevel = 30
             // Automated Test Device images leave out apps and services that tests don't need.
             systemImageSource = "aosp-atd"
+            // Runs with hardware acceleration on x86-64 machines such as CI's. AGP 10 changes the
+            // default to arm64-v8a, which this image can't run.
+            testedAbi = "x86"
         }
     }
 }

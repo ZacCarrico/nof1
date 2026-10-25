@@ -71,6 +71,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # The emulator's system image has its own license, which the runner's SDK hasn't accepted.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+
       # Gradle creates, starts and stops the emulator defined in build-logic.
       - name: Run instrumented tests
         run: >-
