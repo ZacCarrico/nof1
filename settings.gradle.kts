@@ -34,4 +34,5 @@ rootProject.name = "nof1"
 include(":app")
 include(":core:database")
 include(":core:domain")
+include(":core:export")
 include(":core:model")
