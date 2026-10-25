@@ -1,253 +1,44 @@
-# Nof1 - Personal Experiment Tracker
+# Nof1
 
-A simple, elegant Android app that helps users run structured projects for achieving goals through systematic experimentation.
+An Android app for running your own N-of-1 experiments: find out whether a change actually improves
+something you care about.
 
-## Overview
+You set a goal, write down a hypothesis, and test it with an experiment that alternates baseline and
+intervention periods in randomized order. A short daily check-in records how it went. At the end,
+Nof1 compares the periods and gives a plain-language verdict: helped, made it worse, no meaningful
+effect, or inconclusive.
 
-Nof1 follows a hierarchical structure designed to help users systematically test and validate their hypotheses:
+> **Status:** being rewritten from scratch. The experiment engine (scheduling and results) is done;
+> the app UI comes next. See [todo.md](todo.md) for the plan and
+> [docs/product-spec.md](docs/product-spec.md) for how the app works.
 
-- **Projects** contain multiple **Hypotheses**
-- **Hypotheses** contain multiple **Experiments**  
-- Users set goals via Projects, refine them through Hypotheses, and test them via Experiments
-- **Log Entries** capture responses to experiment notifications
+## Project structure
 
-## Features
+| Module | Contents |
+|---|---|
+| `app` | The Android app |
+| `core:model` | Data types: projects, hypotheses, experiments, check-ins, notes (pure Kotlin) |
+| `core:domain` | Experiment scheduling, reminders and results analysis (pure Kotlin) |
 
-### Core Functionality
-- ✅ Create, edit, archive, and delete Projects, Hypotheses, and Experiments
-- ✅ Hierarchical data structure (Project → Hypothesis → Experiment → Log Entry)
-- ✅ Quick logging interface for experiment responses
-- ✅ Toggle visibility of archived/completed items
-- ✅ Clean MVVM architecture with Room database
+More modules (database, design system, features) arrive with their milestones.
 
-### Notification System
-- ✅ Configurable experiment notifications (daily, weekly, custom frequency)
-- ✅ Smart notification skipping (if user logs manually before notification)
-- ✅ WorkManager-based scheduling for reliable delivery
-- ✅ Boot-completed receiver for notification persistence
+## Building
 
-### UI/UX
-- ✅ Minimalist Material Design 3 interface
-- ✅ Jetpack Compose UI with intuitive navigation
-- ✅ Fast, single-tap logging workflow
-- ✅ Contextual actions and confirmation dialogs
-
-## Technical Architecture
-
-### Technology Stack
-- **UI**: Jetpack Compose with Material Design 3
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Database**: Room with SQLite
-- **Notifications**: WorkManager + AlarmManager
-- **Navigation**: Navigation Compose
-- **Language**: Kotlin
-
-### Project Structure
-```
-app/src/main/java/com/nof1/
-├── data/
-│   ├── model/          # Data classes (Project, Hypothesis, Experiment, LogEntry)
-│   ├── local/          # Room database, DAOs, converters
-│   └── repository/     # Repository pattern for data access
-├── ui/
-│   ├── screens/        # Compose screens
-│   ├── components/     # Reusable UI components
-│   ├── navigation/     # Navigation setup
-│   └── theme/          # Material Design theme
-├── viewmodel/          # ViewModels for UI state management
-├── utils/              # Notification helpers and workers
-├── MainActivity.kt     # Main activity
-└── Nof1Application.kt  # Application class
-```
-
-### Component Communication Diagram
-
-```mermaid
-flowchart TD
-    subgraph UI
-        MainActivity
-        Screens["Screens (UI)"]
-        Components["UI Components"]
-    end
-    subgraph ViewModel
-        ProjectVM["ProjectViewModel"]
-        ReminderVM["ReminderViewModel"]
-        HypothesisVM["HypothesisViewModel"]
-        NoteVM["NoteViewModel"]
-        LogEntryVM["LogEntryViewModel"]
-        SimpleProjectVM["SimpleProjectViewModel"]
-    end
-    subgraph Repository
-        ProjectRepo["ProjectRepository"]
-        ReminderRepo["ReminderRepository"]
-        HypothesisRepo["HypothesisRepository"]
-        NoteRepo["NoteRepository"]
-        LogEntryRepo["LogEntryRepository"]
-        ExperimentRepo["ExperimentRepository"]
-        HypothesisGenRepo["HypothesisGenerationRepository"]
-        InMemoryProjectRepo["InMemoryProjectRepository"]
-    end
-    subgraph Data
-        LocalDB["Nof1Database (DAOs)"]
-        Models["Data Models"]
-        ApiService["LlmApiService"]
-    end
-    subgraph Utils
-        ReminderScheduler
-        NotificationScheduler
-        NotificationHelper
-        PreferencesHelper
-        SecureStorage
-        NotificationReceiver
-        BootCompletedReceiver
-    end
-    MainActivity --> Screens
-    Screens --> Components
-    Components -->|"observe/use"| ProjectVM
-    Components -->|"observe/use"| ReminderVM
-    Components -->|"observe/use"| HypothesisVM
-    Components -->|"observe/use"| NoteVM
-    Components -->|"observe/use"| LogEntryVM
-    Components -->|"observe/use"| SimpleProjectVM
-    ProjectVM --> ProjectRepo
-    ReminderVM --> ReminderRepo
-    HypothesisVM --> HypothesisRepo
-    NoteVM --> NoteRepo
-    LogEntryVM --> LogEntryRepo
-    SimpleProjectVM --> InMemoryProjectRepo
-    ProjectRepo --> LocalDB
-    ReminderRepo --> LocalDB
-    HypothesisRepo --> LocalDB
-    NoteRepo --> LocalDB
-    LogEntryRepo --> LocalDB
-    ExperimentRepo --> LocalDB
-    HypothesisGenRepo --> ApiService
-    LocalDB --> Models
-    ApiService --> Models
-    ReminderScheduler --> NotificationScheduler
-    NotificationScheduler --> NotificationHelper
-    NotificationHelper --> PreferencesHelper
-    PreferencesHelper --> SecureStorage
-    NotificationReceiver --> NotificationHelper
-    BootCompletedReceiver --> ReminderScheduler
-    ReminderVM --> ReminderScheduler
-    ReminderScheduler --> ReminderRepo
-    NotificationScheduler --> ReminderRepo
-    NotificationHelper --> ReminderRepo
-    NotificationReceiver --> ReminderRepo
-    BootCompletedReceiver --> ReminderRepo
-```
-
-### Database Schema
-- **Projects**: id, name, description, goal, isArchived, timestamps
-- **Hypotheses**: id, projectId, name, description, isArchived, timestamps
-- **Experiments**: id, hypothesisId, name, description, question, notification settings, timestamps
-- **LogEntries**: id, experimentId, response, createdAt, isFromNotification
-
-## Getting Started
-
-### Prerequisites
-- Android Studio Arctic Fox or later
-- Android SDK 24+ (Android 7.0)
-- Kotlin 1.8+
-
-### Building the App
-1. Clone the repository
-2. Open in Android Studio
-3. Sync Gradle files
-4. Run on device or emulator
+Requirements: JDK 17 or newer, and the Android SDK with API level 37 (a recent Android Studio
+installs it).
 
 ```bash
-git clone <repository-url>
-cd nof1
-./gradlew build
+./gradlew build          # build, unit tests, lint and formatting checks
+./gradlew spotlessApply  # format Kotlin files
+./gradlew :core:domain:test
 ```
 
-### Installation
-- Install directly from Android Studio
-- Or build APK: `./gradlew assembleDebug`
+## How results are computed
 
-## Usage
-
-### Basic Workflow
-1. **Create a Project** - Define your overall goal
-2. **Add Hypotheses** - Break down your goal into testable hypotheses  
-3. **Create Experiments** - Design specific tests for each hypothesis
-4. **Configure Notifications** - Set up reminders for regular logging
-5. **Log Responses** - Quickly capture experiment results
-6. **Review Progress** - Analyze your data over time
-
-### Example Use Case
-**Project**: "Improve Sleep Quality"
-- **Hypothesis 1**: "Reducing screen time before bed improves sleep"
-  - **Experiment**: "No screens 1 hour before bed"
-  - **Question**: "How did you sleep last night? (1-10)"
-- **Hypothesis 2**: "Exercise timing affects sleep quality"
-  - **Experiment**: "Morning vs evening workouts"
-  - **Question**: "Rate your sleep quality and note workout timing"
-
-## Notification Features
-
-### Smart Scheduling
-- Notifications respect user preferences (time, frequency)
-- Automatic skipping if user logs manually
-- Persistent across device reboots
-- Configurable per experiment
-
-### Frequency Options
-- **Daily**: Every day at specified time
-- **Weekly**: Once per week
-- **Custom**: Every N days
-
-## Future Enhancements
-
-### Planned Features
-- [ ] Data visualization and analytics
-- [ ] Export functionality (CSV, PDF)
-- [ ] Cloud sync and backup
-- [ ] AI-powered insights and recommendations
-- [ ] Collaborative experiments
-- [ ] Advanced statistical analysis
-- [ ] Integration with health apps
-- [ ] Dark mode support
-- [ ] Widget for quick logging
-
-### Extensibility
-The app is designed for future extensibility:
-- Modular architecture supports new features
-- Repository pattern enables multiple data sources
-- Clean separation of concerns
-- Comprehensive test coverage (planned)
-
-## Contributing
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests (when test framework is added)
-5. Submit a pull request
-
-### Code Style
-- Follow Kotlin coding conventions
-- Use meaningful variable and function names
-- Add documentation for public APIs
-- Maintain consistent formatting
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For questions, issues, or feature requests:
-- Open an issue on GitHub
-- Check existing documentation
-- Review the code comments for implementation details
-
-## Acknowledgments
-
-- Material Design 3 for UI guidelines
-- Jetpack Compose team for modern Android UI
-- Room database for local persistence
-- WorkManager for reliable background tasks 
+Each pair of periods yields one improvement: the intervention period's average minus the baseline
+period's. Because the order within each pair is randomized, a randomization test gives an exact
+p-value and confidence interval without assuming normally distributed or independent daily data.
+The verdict compares that interval with the smallest change you said would matter, which you set
+before the experiment starts. The details are in
+[docs/product-spec.md](docs/product-spec.md#results-and-verdict) and
+[`RandomizationTest.kt`](core/domain/src/main/kotlin/com/nof1/core/domain/analysis/RandomizationTest.kt).
