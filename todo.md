@@ -2,7 +2,7 @@
 
 Plan for the rewrite. Product decisions and details are in [docs/product-spec.md](docs/product-spec.md).
 
-Each milestone gets its own PR. Per claude.md, every commit message is proposed for approval before committing.
+Each milestone gets its own PR. Per CLAUDE.md, every commit message is proposed for approval before committing.
 
 ## For you
 
@@ -16,11 +16,11 @@ Each milestone gets its own PR. Per claude.md, every commit message is proposed 
 - [x] Remove the old app, `.idea/`, the Firebase config, the lint baseline and the Firebase migration guide (they stay in git history)
 - [x] Rename `claude.md` to `CLAUDE.md`. Claude Code looks for `CLAUDE.md`, and on case-sensitive Linux (including these cloud sessions) the lowercase file isn't loaded
 - [x] Gradle 9.8.2 wrapper with a pinned checksum; version catalog
-- [ ] Android app skeleton: AGP 9.4.0 with built-in Kotlin, Compose BOM 2026.09.00, compileSdk and targetSdk 37, minSdk 26, minified release builds (written; first verified by CI)
+- [x] Android app skeleton: AGP 9.4.0 with built-in Kotlin, Compose BOM 2026.09.00, compileSdk and targetSdk 37, minSdk 26, minified release builds
 - [x] Pure-Kotlin modules `core:model` and `core:domain`. Other modules arrive with their milestones
 - [x] ktlint formatting through Spotless
-- [ ] Android lint with warnings as errors and no baseline (configured; first verified by CI)
-- [ ] CI on GitHub Actions: formatting, build, unit tests, lint (screenshot checks come with M3)
+- [x] Android lint with warnings as errors and no baseline
+- [x] CI on GitHub Actions: formatting, build, unit tests, lint (screenshot checks come with M3)
 - [x] New README
 
 ### M1: Experiment engine (pure Kotlin)
@@ -32,30 +32,33 @@ Each milestone gets its own PR. Per claude.md, every commit message is proposed 
 
 ### M2: Data layer
 
-- [ ] Convention plugins in `build-logic`, now that there will be several Android modules
-- [ ] Android lint on the pure-Kotlin modules
-- [ ] Room database: UUID IDs, UTC timestamps, tombstones; exported schemas and migration tests
-- [ ] Repositories exposing Flows; Hilt modules
-- [ ] Backup rules: back up the database only when the backup is end-to-end encrypted
-- [ ] Export to JSON (everything) and CSV (check-ins)
+- [x] Convention plugins in `build-logic`, now that there are several Android modules
+- [x] Android lint on the pure-Kotlin modules
+- [x] Room 3 database (`core:database`): UUID IDs, UTC timestamps, deletes cascade to what's inside, a deletion log instead of tombstones; the exported schema is committed (CI checks it) and a migration test is set up
+- [x] Repositories exposing Flows (`core:data`); Hilt modules; the app is a Hilt app
+- [x] Backup rules: back up the database only when the backup is end-to-end encrypted, or in a direct transfer to a new phone
+- [x] Export (`core:export`): JSON with everything, in a versioned format; CSV with one row per check-in answer
+- [x] Instrumented tests (database and repositories) on an emulator that Gradle manages, in CI
 
 ### M3: App shell and design system
 
 - [ ] Theme: brand palette and app icon proposal (screenshots for your review), Material You toggle, light and dark, type scale
+- [ ] Minimal and smooth: one main action per screen, Material motion between screens, predictive back
 - [ ] Adaptive navigation (bar on phones, rail on wide screens), edge-to-edge
+- [ ] Settings screen: appearance, and your data (export to JSON or CSV through the system file picker, delete everything)
 - [ ] Type-safe navigation routes and deep links
 - [ ] Screenshot tests: phone, foldable and tablet × light and dark × large text
 
 ### M4: Projects, hypotheses, notes
 
 - [ ] Project list and detail, hypothesis detail; list and detail side by side on wide screens
-- [ ] Create, edit, archive, delete with Undo
+- [ ] Create, edit, archive, delete with Undo (the delete happens once the Undo message has gone)
 - [ ] Text notes on projects, hypotheses and experiments
 
 ### M5: Experiments and check-ins
 
 - [ ] Experiment builder (4 steps) with period-length suggestions and a warning below 5 pairs
-- [ ] Start: randomize, show the calendar, lock the plan
+- [ ] Start: randomize, show the calendar, lock the plan (refuse edits to a started experiment's plan when saving)
 - [ ] Today screen
 - [ ] Check-in screen for all four answer types; a missed day can be filled in until the end of the next day
 - [ ] Stop early
@@ -84,7 +87,7 @@ Each milestone gets its own PR. Per claude.md, every commit message is proposed 
 
 - [ ] Accessibility pass: TalkBack, 200% text, contrast, touch targets
 - [ ] Minified release build, final icon, privacy text
-- [ ] Baseline profile for startup performance
+- [ ] Baseline profile, and macrobenchmarks that check startup time and dropped frames while scrolling
 
 ## Later
 

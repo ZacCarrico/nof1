@@ -1,0 +1,198 @@
+{
+    "format": "nof1-export",
+    "version": 1,
+    "exportedAt": "2026-10-25T02:30:00Z",
+    "projects": [
+        {
+            "id": "project-1",
+            "name": "Sleep better",
+            "goal": "Wake up rested",
+            "createdAt": "2026-03-01T18:30:00Z",
+            "updatedAt": "2026-03-01T18:45:10.250Z",
+            "archivedAt": null
+        }
+    ],
+    "hypotheses": [
+        {
+            "id": "hypothesis-1",
+            "projectId": "project-1",
+            "statement": "Screens late at night make my sleep worse",
+            "details": "",
+            "createdAt": "2026-03-01T18:30:00Z",
+            "updatedAt": "2026-03-01T18:45:10.250Z",
+            "archivedAt": null
+        }
+    ],
+    "experiments": [
+        {
+            "id": "experiment-1",
+            "hypothesisId": "hypothesis-1",
+            "title": "No screens after 10pm",
+            "baseline": {
+                "name": "Usual evenings",
+                "instructions": ""
+            },
+            "intervention": {
+                "name": "No screens",
+                "instructions": "Phone in the kitchen from 10pm"
+            },
+            "primaryOutcome": {
+                "question": {
+                    "id": "q-sleep",
+                    "prompt": "How rested do you feel?",
+                    "answerType": {
+                        "type": "rating",
+                        "min": 1,
+                        "max": 10,
+                        "minLabel": "Exhausted",
+                        "maxLabel": "Fully rested"
+                    }
+                },
+                "betterDirection": "HIGHER",
+                "minimumMeaningfulChange": 1.5
+            },
+            "secondaryQuestions": [
+                {
+                    "id": "q-caffeine",
+                    "prompt": "How much caffeine did you have?",
+                    "answerType": {
+                        "type": "number",
+                        "unit": "mg",
+                        "decimals": 0,
+                        "min": 0.0,
+                        "max": 1000.0
+                    }
+                },
+                {
+                    "id": "q-nap",
+                    "prompt": "Did you nap?",
+                    "answerType": {
+                        "type": "yesNo"
+                    }
+                },
+                {
+                    "id": "q-remarks",
+                    "prompt": "Anything unusual?",
+                    "answerType": {
+                        "type": "freeText"
+                    }
+                }
+            ],
+            "asksAdherence": true,
+            "design": {
+                "periodLengthDays": 3,
+                "settlingInDays": 1,
+                "pairCount": 2,
+                "checkInTime": "21:00",
+                "checkInDay": "SAME_DAY"
+            },
+            "schedule": {
+                "startDate": "2026-03-02",
+                "pairOrders": [
+                    "BASELINE_FIRST",
+                    "INTERVENTION_FIRST"
+                ],
+                "seed": 7042116955323408291
+            },
+            "stoppedOn": null,
+            "createdAt": "2026-03-01T18:30:00Z",
+            "updatedAt": "2026-03-01T18:45:10.250Z",
+            "archivedAt": null
+        },
+        {
+            "id": "experiment-2",
+            "hypothesisId": "hypothesis-1",
+            "title": "Morning walk",
+            "baseline": {
+                "name": "No walk",
+                "instructions": ""
+            },
+            "intervention": {
+                "name": "Walk",
+                "instructions": "20 minutes outside before 9am"
+            },
+            "primaryOutcome": {
+                "question": {
+                    "id": "q-energy",
+                    "prompt": "Energy today",
+                    "answerType": {
+                        "type": "rating",
+                        "min": 1,
+                        "max": 10,
+                        "minLabel": "",
+                        "maxLabel": ""
+                    }
+                },
+                "betterDirection": "HIGHER",
+                "minimumMeaningfulChange": 1.0
+            },
+            "secondaryQuestions": [],
+            "asksAdherence": false,
+            "design": {
+                "periodLengthDays": 7,
+                "settlingInDays": 2,
+                "pairCount": 5,
+                "checkInTime": "20:30",
+                "checkInDay": "SAME_DAY"
+            },
+            "schedule": null,
+            "stoppedOn": null,
+            "createdAt": "2026-03-01T18:30:00Z",
+            "updatedAt": "2026-03-01T18:45:10.250Z",
+            "archivedAt": "2026-03-01T18:45:10.250Z"
+        }
+    ],
+    "checkIns": [
+        {
+            "id": "check-in-2",
+            "experimentId": "experiment-1",
+            "studyDay": "2026-03-02",
+            "followedPlan": true,
+            "answers": [
+                {
+                    "type": "rating",
+                    "questionId": "q-sleep",
+                    "value": 6
+                },
+                {
+                    "type": "number",
+                    "questionId": "q-caffeine",
+                    "value": 95.0
+                },
+                {
+                    "type": "yesNo",
+                    "questionId": "q-nap",
+                    "value": false
+                },
+                {
+                    "type": "freeText",
+                    "questionId": "q-remarks",
+                    "text": "Late dinner"
+                }
+            ],
+            "recordedAt": "2026-03-03T02:05:00Z",
+            "timeZone": "America/New_York",
+            "updatedAt": "2026-03-03T02:05:00Z"
+        },
+        {
+            "id": "check-in-6",
+            "experimentId": "experiment-1",
+            "studyDay": "2026-03-06",
+            "followedPlan": null,
+            "answers": [],
+            "recordedAt": "2026-03-07T02:05:00Z",
+            "timeZone": "America/New_York",
+            "updatedAt": "2026-03-07T02:05:00Z"
+        }
+    ],
+    "notes": [
+        {
+            "id": "note-1",
+            "parentType": "experiment",
+            "parentId": "experiment-1",
+            "text": "Had a \"big\" coffee at 4pm,\nslept badly",
+            "createdAt": "2026-03-01T18:30:00Z",
+            "updatedAt": "2026-03-01T18:45:10.250Z"
+        }
+    ]
+}

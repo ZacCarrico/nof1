@@ -1,18 +1,18 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.nof1.android.application)
+    alias(libs.plugins.nof1.hilt)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.nof1"
-    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.nof1"
-        minSdk = 26
-        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // Runs instrumented tests in Hilt's test application.
+        testInstrumentationRunner = "com.nof1.HiltTestRunner"
     }
 
     buildTypes {
@@ -26,24 +26,13 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
     buildFeatures {
         compose = true
-    }
-
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
-        // Version-freshness checks would fail the build whenever a library ships an update.
-        disable += setOf("AndroidGradlePluginVersion", "GradleDependency", "NewerVersionAvailable")
     }
 }
 
 dependencies {
+    implementation(projects.core.data)
     implementation(projects.core.domain)
 
     implementation(libs.androidx.activity.compose)
@@ -52,4 +41,13 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    androidTestImplementation(projects.core.database)
+    androidTestImplementation(libs.androidx.room.runtime)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.kotlin.test.junit)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    kspAndroidTest(libs.hilt.compiler)
 }

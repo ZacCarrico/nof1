@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -31,5 +32,8 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "nof1"
 
 include(":app")
-include(":core:model")
+include(":core:data")
+include(":core:database")
 include(":core:domain")
+include(":core:export")
+include(":core:model")
