@@ -29,11 +29,13 @@ jobs:
       - name: Check formatting
         run: ./gradlew spotlessCheck
 
+      # --continue reports every failing task, not just the first.
       - name: Build, test and lint
-        run: ./gradlew build
+        run: ./gradlew build --continue
 
       # The build exports the database schema; a changed or new schema file must be committed.
       - name: Check that the database schema is committed
+        if: ${{ !cancelled() }}
         run: |
           if [ -n "$(git status --porcelain -- core/database/schemas)" ]; then
             echo "::error::The database schema changed. Commit core/database/schemas:"
