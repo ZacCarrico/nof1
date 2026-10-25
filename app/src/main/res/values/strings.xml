@@ -1,4 +1,5 @@
-<resources>
-    <string name="app_name">Nof1</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Lint's typo check reads the app's name as a misspelling of "Nof!". -->
+    <string name="app_name" tools:ignore="Typos">Nof1</string>
     <string name="placeholder_message">The new Nof1 is being built.</string>
 </resources>
