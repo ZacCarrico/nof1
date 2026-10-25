@@ -32,9 +32,57 @@ jobs:
       - name: Build, test and lint
         run: ./gradlew build
 
+      # The build exports the database schema; a changed or new schema file must be committed.
+      - name: Check that the database schema is committed
+        run: |
+          if [ -n "$(git status --porcelain -- core/database/schemas)" ]; then
+            echo "::error::The database schema changed. Commit core/database/schemas:"
+            git status --porcelain -- core/database/schemas
+            git add -N core/database/schemas
+            git diff -- core/database/schemas
+            exit 1
+          fi
+
       - name: Upload reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: reports
+          path: '**/build/reports/'
+
+  device-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Lets the emulator use hardware virtualization.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Gradle creates, starts and stops the emulator defined in build-logic.
+      - name: Run instrumented tests
+        run: >-
+          ./gradlew
+          :core:database:pixel6Api30DebugAndroidTest
+          :core:data:pixel6Api30DebugAndroidTest
+          :app:pixel6Api30DebugAndroidTest
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-test-reports
           path: '**/build/reports/'
