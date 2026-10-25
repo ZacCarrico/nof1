@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and higher. No app data exists yet; rules for the database and the AI key come
+     with milestones M2 and M8. -->
 <data-extraction-rules>
-    <cloud-backup>
-        <exclude domain="sharedpref" path="device.xml" />
-    </cloud-backup>
-    <device-transfer>
-        <exclude domain="sharedpref" path="device.xml" />
-    </device-transfer>
-</data-extraction-rules> 
+    <cloud-backup />
+    <device-transfer />
+</data-extraction-rules>

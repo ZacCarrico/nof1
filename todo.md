@@ -13,25 +13,30 @@ Each milestone gets its own PR. Per claude.md, every commit message is proposed 
 
 ### M0: Reset and foundations
 
-- [ ] Remove the old app, `.idea/`, the Firebase config, the lint baseline and the Firebase migration guide (they stay in git history)
-- [ ] Rename `claude.md` to `CLAUDE.md`. Claude Code looks for `CLAUDE.md`, and on case-sensitive Linux (including these cloud sessions) the lowercase file isn't loaded
-- [ ] Gradle setup: version catalog, convention plugins, latest stable AGP, Kotlin and Compose; minSdk 26, targeting the latest SDK
-- [ ] Modules: `app`; `core:` model, domain, database, data, designsystem, notifications; `feature:` today, projects, experiments, settings
-- [ ] Checks: Android lint with warnings as errors and no baseline; ktlint formatting
-- [ ] CI on GitHub Actions: build, unit tests, lint, screenshot checks
-- [ ] New README
+- [x] Remove the old app, `.idea/`, the Firebase config, the lint baseline and the Firebase migration guide (they stay in git history)
+- [x] Rename `claude.md` to `CLAUDE.md`. Claude Code looks for `CLAUDE.md`, and on case-sensitive Linux (including these cloud sessions) the lowercase file isn't loaded
+- [x] Gradle 9.8.2 wrapper with a pinned checksum; version catalog
+- [ ] Android app skeleton: AGP 9.4.0 with built-in Kotlin, Compose BOM 2026.09.00, compileSdk and targetSdk 37, minSdk 26, minified release builds (written; first verified by CI)
+- [x] Pure-Kotlin modules `core:model` and `core:domain`. Other modules arrive with their milestones
+- [x] ktlint formatting through Spotless
+- [ ] Android lint with warnings as errors and no baseline (configured; first verified by CI)
+- [ ] CI on GitHub Actions: formatting, build, unit tests, lint (screenshot checks come with M3)
+- [x] New README
 
 ### M1: Experiment engine (pure Kotlin)
 
-- [ ] Domain models
-- [ ] Schedule: randomized pair order from a stored seed, periods, settling-in days, daily check-in times in the local time zone (correct across daylight-saving changes), and check-ins that describe the previous day
-- [ ] Results: period values, pair improvements, randomization test (exact up to 20 pairs, fixed-seed Monte Carlo above that), confidence interval, verdict rules, minimum-data rules
-- [ ] Unit tests, including hand-worked examples and daylight-saving transitions
+- [x] Domain models
+- [x] Schedule: randomized pair order from a stored seed, periods, settling-in days, daily check-in times in the local time zone (correct across daylight-saving changes), and check-ins that describe the previous day
+- [x] Results: period values, pair improvements, randomization test (exact up to 20 pairs, fixed-seed Monte Carlo above that), confidence interval, verdict rules, minimum-data rules
+- [x] Unit tests, including hand-worked examples, a brute-force check of the test's definition, a coverage simulation and daylight-saving transitions
 
 ### M2: Data layer
 
+- [ ] Convention plugins in `build-logic`, now that there will be several Android modules
+- [ ] Android lint on the pure-Kotlin modules
 - [ ] Room database: UUID IDs, UTC timestamps, tombstones; exported schemas and migration tests
 - [ ] Repositories exposing Flows; Hilt modules
+- [ ] Backup rules: back up the database only when the backup is end-to-end encrypted
 - [ ] Export to JSON (everything) and CSV (check-ins)
 
 ### M3: App shell and design system

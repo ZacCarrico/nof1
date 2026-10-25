@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<full-backup-content>
-    <exclude domain="sharedpref" path="device.xml" />
-</full-backup-content> 
+<!-- Android 11 and lower. No app data exists yet; rules for the database and the AI key come
+     with milestones M2 and M8. -->
+<full-backup-content />

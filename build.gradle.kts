@@ -1,21 +1,20 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id("com.android.application") version "8.2.2" apply false
-    id("com.android.library") version "8.10.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
-    id("com.google.gms.google-services") version "4.4.0" apply false
+    alias(libs.plugins.android.application) apply false
+    // Declared next to AGP so its built-in Kotlin support uses this Kotlin version.
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.spotless)
 }
 
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
+spotless {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**")
+        ktlint(libs.versions.ktlint.get())
     }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        targetExclude("**/build/**")
+        ktlint(libs.versions.ktlint.get())
     }
 }
