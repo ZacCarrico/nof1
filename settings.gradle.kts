@@ -32,6 +32,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "nof1"
 
 include(":app")
+include(":core:data")
 include(":core:database")
 include(":core:domain")
 include(":core:export")
