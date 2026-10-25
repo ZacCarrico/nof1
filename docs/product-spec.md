@@ -18,6 +18,7 @@ Example: project "Sleep better" → hypothesis "Screens before bed hurt my sleep
 | AI suggestions | Included, using the user's own API key |
 | Notes | Text only; photos later |
 | Web | Not now; scope decided later |
+| Look and feel | Minimal and smooth; nothing from the old app's UI needs to be kept |
 
 ## Proposed defaults
 
@@ -30,10 +31,11 @@ Product choices made to fill gaps. Any of them can change.
 - **Verdict only at the end:** while an experiment runs, results show progress and averages. The verdict appears when it ends, so peeking can't bias it.
 - **Home is a Today screen** showing what to do today for each running experiment and whether you've checked in.
 - **Reminders belong to experiments** (check-ins and period starts). The old app's separate project and hypothesis reminders are dropped.
-- **Backup and export:** app data is included in Android's own backup, which is end-to-end encrypted on Android 9+ when a screen lock is set, so it survives a phone change. The AI key is excluded. Export to JSON and CSV at any time.
+- **Backup and export:** your data is included in Android's own backup only when that backup is end-to-end encrypted (Android 9 and later, with a screen lock set), and in direct transfers to a new phone, so it survives a phone change. On Android 8 it isn't backed up. The AI key is never backed up. Export at any time: everything as JSON, and check-in answers as CSV for spreadsheets.
 - **No analytics or crash-reporting SDKs.**
 - **Identity:** keep the name Nof1 and the package `com.nof1`. Data from the old app isn't migrated.
-- **Look:** a brand color palette by default (stable colors for charts, and later for the web), with a Material You toggle in Settings. Light and dark themes.
+- **Look and feel, minimal:** each screen has one main action and shows only what that action needs; details are one tap away. Plenty of space, few colors: a brand palette by default (stable colors for charts, and later for the web), with a Material You toggle in Settings. Light and dark themes.
+- **Look and feel, smooth:** quick Material transitions and predictive back, nothing that blocks input, no work on the main thread, and startup and scrolling measured so they stay fast.
 - **Language:** English for now, with all text in string resources so translation is possible later.
 - **Devices:** Android 8.0 (API 26) and newer.
 
@@ -119,11 +121,12 @@ Layouts follow Material 3 and Android's adaptive layout guidance: window size cl
 
 - Nof1 has no account and no server. Its only network traffic is AI suggestions, when you request them, sent straight to your provider. Android's own backup is covered under "Backup and export" above.
 - No cleartext traffic, minified release builds, and no debug UI or verbose logging in release.
-- Export uses the system file picker, so no storage permission is needed.
+- Export uses the system file picker, so no storage permission is needed. In the CSV, text that a spreadsheet could run as a formula is prefixed with an apostrophe.
 
 ## Data model (sync-ready)
 
-- IDs are UUIDs, and created and updated times are stored in UTC. Deletions are kept as tombstones, so adding sync later doesn't need ID mapping.
+- IDs are UUIDs, and created and updated times are stored in UTC, so adding sync later doesn't need ID mapping.
+- Deleting removes the data. A deletion log keeps only the type and ID of what was deleted, so a future sync can delete it on other devices too. Undo works by deleting only once the Undo message has gone.
 - Check-ins store the study date, the moment they were recorded and the time zone.
 - Experiments store the realized period sequence and the randomization seed.
 - Room schemas are exported and every schema change ships with a migration. The database is never wiped on upgrade.

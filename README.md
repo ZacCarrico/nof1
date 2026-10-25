@@ -8,19 +8,24 @@ intervention periods in randomized order. A short daily check-in records how it 
 Nof1 compares the periods and gives a plain-language verdict: helped, made it worse, no meaningful
 effect, or inconclusive.
 
-> **Status:** being rewritten from scratch. The experiment engine (scheduling and results) is done;
-> the app UI comes next. See [todo.md](todo.md) for the plan and
-> [docs/product-spec.md](docs/product-spec.md) for how the app works.
+> **Status:** being rewritten from scratch. The experiment engine (scheduling and results) and the
+> data layer (database, repositories, export) are done; the app UI comes next. See
+> [todo.md](todo.md) for the plan and [docs/product-spec.md](docs/product-spec.md) for how the app
+> works.
 
 ## Project structure
 
 | Module | Contents |
 |---|---|
 | `app` | The Android app |
-| `core:model` | Data types: projects, hypotheses, experiments, check-ins, notes (pure Kotlin) |
+| `core:data` | Repositories: the app's way to read and save data, as Kotlin Flows |
+| `core:database` | The Room database: tables, queries and their mapping to `core:model` |
 | `core:domain` | Experiment scheduling, reminders and results analysis (pure Kotlin) |
+| `core:export` | Export to JSON (everything) and CSV (check-in answers) (pure Kotlin) |
+| `core:model` | Data types: projects, hypotheses, experiments, check-ins, notes (pure Kotlin) |
+| `build-logic` | Gradle convention plugins shared by the modules |
 
-More modules (database, design system, features) arrive with their milestones.
+More modules (design system, features) arrive with their milestones.
 
 ## Building
 
@@ -32,6 +37,17 @@ installs it).
 ./gradlew spotlessApply  # format Kotlin files
 ./gradlew :core:domain:test
 ```
+
+The database, repository and app tests run on an Android emulator that Gradle downloads, starts
+and stops itself (this needs hardware virtualization, as Android Studio's emulator does):
+
+```bash
+./gradlew :core:database:pixel6Api30DebugAndroidTest :core:data:pixel6Api30DebugAndroidTest \
+  :app:pixel6Api30DebugAndroidTest
+```
+
+Changing a database entity changes the exported schema in `core/database/schemas`, which must be
+committed along with a new database version and a migration; CI fails otherwise.
 
 ## How results are computed
 
