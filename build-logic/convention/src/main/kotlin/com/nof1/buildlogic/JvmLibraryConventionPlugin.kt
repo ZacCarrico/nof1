@@ -25,6 +25,9 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             }
             extensions.configure<Lint> {
                 configureLint()
+                // A pure-Kotlin module's lint doesn't know the app's minSdk (26), so it flags a
+                // SecureRandom flaw that only affects Android 4.3 and older.
+                disable += "TrulyRandom"
             }
         }
     }
