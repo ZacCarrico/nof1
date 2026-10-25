@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and lower. No app data exists yet; rules for the database and the AI key come
-     with milestones M2 and M8. -->
-<full-backup-content />
+<!-- Android 8 (API 26 and 27): backups can't be required to be encrypted on these versions, so
+     nothing is backed up. Android 9 to 11 use xml-v28/backup_rules.xml instead, and Android 12 and
+     higher use data_extraction_rules.xml. -->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="device_root" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

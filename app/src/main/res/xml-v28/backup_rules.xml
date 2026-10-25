@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 9 to 11 (API 28 to 30): only the database, and only when the backup is end-to-end
+     encrypted (the user has a screen lock) or goes straight to a new device. -->
+<full-backup-content>
+    <include domain="database" path="." requireFlags="clientSideEncryption" />
+    <include domain="database" path="." requireFlags="deviceToDeviceTransfer" />
+</full-backup-content>
