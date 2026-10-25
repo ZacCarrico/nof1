@@ -6,8 +6,13 @@ Each milestone gets its own PR. Per CLAUDE.md, every commit message is proposed 
 
 ## For you
 
-- [ ] Allow `dl.google.com` in this cloud environment's network settings (environment menu in the session title bar → Edit → Network access → Allowed domains). It hosts the Android SDK and Google's Maven repository. Until it's allowed, only the pure-Kotlin modules (M1) can be built and tested in cloud sessions.
-- [ ] Lock down or delete the old Firebase project `nof1-26456`. If the rules in this repo are the deployed ones, any signed-in user, including anonymous ones, can create documents under another user's ID. v1 doesn't use Firebase.
+- [ ] Allow `dl.google.com` in this cloud environment's network settings (environment menu in the session title bar → Edit → Network access → Allowed domains). It hosts the Android SDK and Google's Maven repository. Until it's allowed, only the pure-Kotlin modules (M1) can be built and tested in cloud sessions. Even then, cloud sessions can't run an emulator, so device tests there only run in CI.
+- [ ] Lock down or delete the old Firebase project `nof1-26456` (delete it, or set its security rules to deny all access). If the old rules in git history are the deployed ones, any signed-in user, including anonymous ones, can create documents under another user's ID. v1 doesn't use Firebase.
+- [ ] Judge on your phone whether animations, predictive back and scrolling feel smooth (from M3 on). Screenshots don't show motion.
+
+### Working on a laptop
+
+A laptop with Android Studio can build the app, run device tests on an emulator or a connected phone, and take screenshots of the running app, none of which cloud sessions can do. A new session doesn't have earlier conversations: the plan is here, decisions are in [docs/product-spec.md](docs/product-spec.md), and CLAUDE.md loads in every session.
 
 ## Android v1
 
@@ -49,6 +54,12 @@ Each milestone gets its own PR. Per CLAUDE.md, every commit message is proposed 
 - [ ] Type-safe navigation routes and deep links
 - [ ] Screenshot tests: phone, foldable and tablet × light and dark × large text
 
+Carried over from M2:
+
+- [ ] Run a real backup and restore (`adb shell bmgr`), with and without encryption, and a device-to-device transfer. So far the backup rules have only been built and linted
+- [ ] Launch the minified release build once screens use the database. Only debug builds have run, and R8 can remove code the app needs at runtime
+- [ ] Make the Gradle-managed test emulator match the machine's architecture. It's pinned to an x86 image, which can't run on Apple Silicon Macs (AGP also warns that it doesn't specify a `testedAbi`, even though it does)
+
 ### M4: Projects, hypotheses, notes
 
 - [ ] Project list and detail, hypothesis detail; list and detail side by side on wide screens
@@ -68,6 +79,7 @@ Each milestone gets its own PR. Per CLAUDE.md, every commit message is proposed 
 - [ ] Check-in reminders and period-start notices; skip the reminder when already checked in
 - [ ] Reschedule after a reboot, a time or time-zone change, and an app update
 - [ ] Ask for notification permission when the first experiment starts
+- [ ] Check reminders on a real phone; battery savers behave differently from the emulator
 
 ### M7: Results
 
@@ -87,7 +99,8 @@ Each milestone gets its own PR. Per CLAUDE.md, every commit message is proposed 
 
 - [ ] Accessibility pass: TalkBack, 200% text, contrast, touch targets
 - [ ] Minified release build, final icon, privacy text
-- [ ] Baseline profile, and macrobenchmarks that check startup time and dropped frames while scrolling
+- [ ] Release signing key: create it on your own machine and keep it out of the repo and cloud sessions
+- [ ] Baseline profile, and macrobenchmarks that check startup time and dropped frames while scrolling (run on a physical phone; emulator timings aren't reliable)
 
 ## Later
 
