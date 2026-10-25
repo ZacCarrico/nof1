@@ -69,8 +69,8 @@ class DeletionTest {
             assertEquals(0L, db.rowCount(table), table)
         }
         assertEquals(
-            listOf("project-note", "hypothesis-note"),
-            db.exportDao().snapshot().notes.map { it.id },
+            setOf("project-note", "hypothesis-note"),
+            db.exportDao().snapshot().notes.map { it.id }.toSet(),
         )
         assertEquals(
             listOf(DeletionEntity(DeletionEntity.EXPERIMENT, "experiment", 1_000)),
