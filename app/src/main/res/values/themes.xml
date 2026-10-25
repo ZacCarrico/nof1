@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Window theme only; Compose draws the UI. Dark variant in values-night. -->
     <style name="Theme.Nof1" parent="android:Theme.Material.Light.NoActionBar" />
-</resources> 
+</resources>

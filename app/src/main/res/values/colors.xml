@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Placeholder until the brand palette is chosen in milestone M3. -->
     <color name="ic_launcher_background">#3DDC84</color>
-</resources> 
+</resources>
